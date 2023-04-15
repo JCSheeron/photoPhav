@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-# As a best practice when using python venv, I could have used this, but the above seems to work
-# and be more portable
+# As a best practice when using python venv, I could have used this, but the
+# above seems to work and be more portable
 #!/home/jcsheeron/swDev/python/ftArchPostProc/bin/python
 
 # Example of how to disable a pylint check
@@ -28,51 +28,55 @@
 # Constants: ALL_CAPS_WITH_UNDERSCORES. Usually defined on a module level.
 
 """
-pyTemplate.py
+photoPhav.py
 
-Start out with a docstring with the name of the file.
+PhotoPhav (as in Photo Favorites) will create links to favorite images based on 'star'
+and/or color ratings.
 
-Then explain what the program does.
+A souce directory will be searced for image files. (TODO: Document types). For
+each image file found, inspect the xmp metadata. If the star rating is above
+a value (TODO: What value) create a link to the file in the destination
+directory. If the color rating is above a value (TODO: What Value), then create
+a link to the file in the destinaiton directory.
 
-This is intended to be a template to be used as a starting place when creating a
-new python program. It is just a basic formatted framwork and some examples of
-how to import libraries, set up command line arguments, and read in a config file.
+The star rating threshold can be specified with the -sr, --star-rating argument.
+Values at or above the indicated value will be included.
+
+The star rating will be ignored if the -is, --ignore-star option is given.
+
+The color rating threshold can be specified with the -cr, --color-rating argument.
+Values at or above the indicated value will be included.
+
+The color rating will be ignored if the -ic, --ignore-star option is given.
+
+A source directory can be provided with the -s, --source-dir argument to specify
+the directory to use for the source images. If this option is not provided,
+the working directory will used as the source directory.
+
+A destinaiton directory can be provided with the -d, --dest-dir argument to specify
+the directory to use for the link destination. If this option is not provided,
+the working directory will used as the source directory.
+
+The -r, -R, --recursive option searches the source directory recursively. If
+images are found in sub folders, the same directory structure will be used
+in the destination (TODO: Naming conflict with orginal file vs link file in 
+the same directory structure.`
 """
 
 # imports
 #
 # Standard library and system imports
 # import sys
-# date and time stuff
-from datetime import datetime, time
-
 
 # Third party and library imports
-# from pandas.tseries.frequencies import to_offset
-# from dateutil import parser as duparser
-
-# config file parser
-import configparser
-
-# csv file stuff
-# import csv
 
 # arg parser
 import argparse
-
-# numerical manipulation libraries
-# import numpy as np
-# import pandas as pd
 
 # Local application and user library imports
 #
 # Note: May need PYTHONPATH (set in ~/.profile?) to be set depending
 # on the location of the imported files
-# TimeStamped Indexed Data Class
-# from bpsTsIdxData import TsIdxData
-# list duplication helper functions
-# from bpsListDuplicates import listDuplicates
-# from bpsListDuplicates import listToListIntersection
 
 # Helper functions
 def helperFunction1(arg1):
@@ -84,12 +88,8 @@ def helperFunction2(arg1):
 
 
 # eample of defining a local function
-# example of enforcing specifics on an argument
-def intDegree(degArg):
-    value = int(degArg)
-    if not isinstance(value, int) or value < 1:
-        msg = "The --degree argument, value %r, is not an integer >=1" % degArg
-        raise argparse.ArgumentTypeError(msg)
+def localFunction1(arg1):
+    value = int(arg1)
     return value
 
 
