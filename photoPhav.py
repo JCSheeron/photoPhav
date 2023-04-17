@@ -31,36 +31,7 @@
 photoPhav.py
 
 PhotoPhav (as in Photo Favorites) will create links to favorite images based on 'star'
-and/or color ratings.
-
-A souce directory will be searced for image files. (TODO: Document types). For
-each image file found, inspect the xmp metadata. If the star rating is above
-a value (TODO: What value) create a link to the file in the destination
-directory. If the color rating is above a value (TODO: What Value), then create
-a link to the file in the destinaiton directory.
-
-The star rating threshold can be specified with the -sr, --star-rating argument.
-Values at or above the indicated value will be included.
-
-The star rating will be ignored if the -is, --ignore-star option is given.
-
-The color rating threshold can be specified with the -cr, --color-rating argument.
-Values at or above the indicated value will be included.
-
-The color rating will be ignored if the -ic, --ignore-star option is given.
-
-A source directory can be provided with the -s, --source-dir argument to specify
-the directory to use for the source images. If this option is not provided,
-the working directory will used as the source directory.
-
-A destinaiton directory can be provided with the -d, --dest-dir argument to specify
-the directory to use for the link destination. If this option is not provided,
-the working directory will used as the source directory.
-
-The -r, -R, --recursive option searches the source directory recursively. If
-images are found in sub folders, the same directory structure will be used
-in the destination (TODO: Naming conflict with orginal file vs link file in 
-the same directory structure.`
+and/or color ratings. See main.docstring for additional information.
 """
 
 # imports
@@ -70,228 +41,159 @@ the same directory structure.`
 
 # Third party and library imports
 
+# path and file processing
+from pathlib import Path
+
 # arg parser
 import argparse
 
+
 # Local application and user library imports
+
 #
 # Note: May need PYTHONPATH (set in ~/.profile?) to be set depending
 # on the location of the imported files
 
-# Helper functions
-def helperFunction1(arg1):
-    return arg1
-
-
-def helperFunction2(arg1):
-    return arg1
-
-
-# eample of defining a local function
-def localFunction1(arg1):
-    value = int(arg1)
-    return value
-
 
 # Main function to execute when script is run
 def main():
-    """Brief 1 line descripiton.
+    """
+    PhotoPhav (as in Photo Favorites) will create links to favorite images based on 'star'
+    and/or color ratings.
 
-    More detailed description should describe the program, what it does, and how to use it.
-    This program in inteded to be (run directly || used as in imported module).
+    A souce directory will be searced for image files. (TODO: Document types). For
+    each image file found, inspect the xmp metadata. If the star rating is above
+    a value (default: 1) create a link to the file in the destination
+    directory. If the color rating is above a value (TODO: What Value), then create
+    a link to the file in the destinaiton directory.
 
-    Blah Blah Blah
-    Blah Blah Blah
-    Blah Blah Blah
+    The star rating threshold can be specified with the -sr, --star-rating argument.
+    Values at or above the indicated value will be included. Default: 1
+
+    The star rating will be ignored if the -is, --ignore-star option is given.
+
+    The color rating threshold can be specified with the -cr, --color-rating argument.
+    Values at or above the indicated value will be included. **Default value??**
+
+    The color rating will be ignored if the -ic, --ignore-star option is given.
+    Default: true (ignore color rating by default)
+
+    A source directory can be provided with the -sd, --source-dir argument to specify
+    the directory to use for the source images. If this option is not provided,
+    the working directory will used as the source directory.
+
+    A destinaiton directory can be provided with the -dd, --dest-dir argument to specify
+    the directory to use for the link destination. If this option is not provided,
+    the working directory will used as the source directory.
+
+    The -r, -R, --recursive option searches the source directory recursively. If
+    images are found in sub folders, the same directory structure will be used
+    in the destination (TODO: Naming conflict with orginal file vs link file in 
+    the same directory structure.`
     """
     # Descripiton string will show up in help.
-    # Here is how you reuse the doc string from above.
     DESC_STR = main.__doc__
     # Create an epilog string to further describe the input file
     # The epilog will show up at the bottom of the help
-    EPL_STR = """More info shown at the bottom of the help."""
+    EPL_STR = ""
 
     # **** argument parsing
-    # define the arguments
-
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description=DESC_STR,
         epilog=EPL_STR,
     )
-    parser.add_argument("posArg1", help="Positional Argument 1")
-    parser.add_argument("posArg2", help="Positional Argument 2")
-    # degree must be an integer >= 1
+    # define the arguments
+    # star rating
     parser.add_argument(
-        "--degree",
+        "-sr",
+        "--star-rating",
         default=1,
-        type=intDegree,
+        type=int,
         metavar="",
-        help="Polynomial degree used to \
-    curve fit the data. Default value is 1 for linear curve fit.",
+        help="Star rating. Values equal or greater are considered Favorites \
+and a link will be created. Default value is 1, so any stared image is a favorite."
     )
     parser.add_argument(
-        "-c",
-        "--configFile",
-        default="config.ini",
-        metavar="",
-        help="Config file. Default is config.ini.",
+        "-is",
+        "--ignore-star",
+        action="store_true",
+        help="Ignore star ratings if set."
     )
+    # color rating
+    parser.add_argument(
+        "-cr",
+        "--color-rating",
+        default=1,
+        type=int,
+        metavar="",
+        help="Color rating. Values equal are considered Favorites \
+and a link will be created."
+    )
+    parser.add_argument(
+        "-ic",
+        "--ignore-color",
+        action="store_true",
+        help="NOTE: Not yet supported -- color ratings are always ignored. \
+Ignore color ratings if set (default)."
+    )
+    # source dir
+    parser.add_argument(
+        "-sd",
+        "--source-dir",
+        default=".",
+        metavar="",
+        help="Source directory. Look here for image files. Omit or specify '.' \
+to use the working directoy."
+    )
+    # destination dir
+    parser.add_argument(
+        "-dd",
+        "--destination-dir",
+        default=".",
+        metavar="",
+        help="Destination directory.  Create the links here. Omit or specify '.' \
+to use the working directoy."
+    )
+    # recurse thru the source directory
+    parser.add_argument(
+        "-r",
+        "-R",
+        "--recursive",
+        action="store_true",
+        help="Search the source directory recursively."
+    )
+    # verbose output
     parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
-        default=False,
-        help="Verbose output, usually used for troubleshooting.",
-    )
-    parser.add_argument(
-        "-optArg1",
-        "--optionalArgument1",
-        default=None,
-        metavar="",
-        help="Optional Argument 1",
-    )
-    parser.add_argument(
-        "-optArg2",
-        "--optionalArgument2",
-        default="optArg2",
-        metavar="",
-        help='Optional Argument 2. How to escape a special \
-    character (", ").How to escape the %% character.',
-    )
-    parser.add_argument(
-        "-optTFArg1",
-        action="store_true",
-        default=False,
-        help="True/False argument set to default to False, and is \
-    set to True if the argument is specified. The argument takes no values.",
-    )
-    # add a mutually exclusive required group
-    typegroup = parser.add_mutually_exclusive_group(required=True)
-    typegroup.add_argument(
-        "-me1", action="store_true", default=False, help="Mutually Exclusive choice 1"
-    )
-    typegroup.add_argument(
-        "-me2", action="store_true", default=False, help="Mutually Exclusive choice 2"
-    )
-    typegroup.add_argument(
-        "-me3", action="store_true", default=False, help="Mutually Exclusive choice 3"
+        help="Verbose output, usually used for troubleshooting."
     )
     # parse the arguments
     args = parser.parse_args()
 
     # At this point, the arguments will be:
-    # Argument          Values      Description
-    # args.posArg1      string
-    # args.posArg2      string
-    # args.degree       integer >= 1
-    # args.configFile   string, default 'config.ini'
-    # args.verbose      True/False, default False
-    # args.optionalArgument1     string
-    # args.optionalArgument2      string
-    # args.optTFArg1    True/False
-    # args.me1          True/False
-    # args.me2          True/False
-    # args.me3          True/False
+    # Argument          Type        Default
+    # args.star_rating  int         1
+    # args.ignore_star  bool        False   use star ratings >= 1 by default
+    # args.color_rating int         1
+    # args.ignore_color bool        False   Forced True for now to ignore color rating
+    # args.source_dir   string      .
+    # args.destination_dir   string .
+    # args.recursive    bool        False
+    # args.ignore-case  bool        False   case sensitive by default
+    # args.regexp       string      None
+    # args.verbose      bool        False
 
-    # Put the begin mark here, after the arg parsing, so argument problems are
-    # reported first.
-    print("**** Begin Processing ****")
-    # get start processing time
-    procStart = datetime.now()
-    print("    Process start time: " + procStart.strftime("%m/%d/%Y %H:%M:%S"))
-
-    # bring in config data from config.ini by default or from file specified
-    # with -c argument
-    config = configparser.ConfigParser()
-    cfgFile = config.read(args.configFile)
-    # bail out if no config file was read
-    if not cfgFile:
-        print(
-            "\nERROR: The configuration file: "
-            + args.configFile
-            + " was not found. Exiting."
-        )
-        quit()
-    # if we get here, we have config data
-    if args.verbose:
-        print("\nThe config file(s) used are:")
-        print(cfgFile)
-        print("\nThe resulting configuration has these settings:")
-        for section in config:
-            print(section)
-            for key in config[section]:
-                print("  ", key, ":", config[section][key])
+    # Force ignore_color to be true for now
+    args.ignore_color = True
 
     if args.verbose:
         print("\nThe following arguments were parsed:")
         print(args)
-
-    # Process the arguments
-    if args.posArg1 is not None:
-        print(args.posArg1)
-    else:
-        # arg is none, so print a message.
-        # Not actually possible, since this is a positional argument.
-        # Inclued here so we can see how to process arguments.
-        print("No value for posArg1.")
-
-    if args.posArg2 is not None:
-        print(args.posArg2)
-    else:
-        # arg is none, so print a message.
-        # Not actually possible, since this is a positional argument.
-        # Inclued here so we can see how to process arguments.
-        print("No value for posArg2.")
-
-    if args.degree is not None:
-        print(args.degree)
-    else:
-        # arg is none, so print a message.
-        print("No value for degree.")
-
-    if args.optionalArgument1 is not None:
-        print(args.optionalArgument1)
-    else:
-        # arg is none, so print a message.
-        print("No value for optArg1.")
-
-    if args.optionalArgument2 is not None:
-        print(args.optionalArgument2)
-    else:
-        # arg is none, so print a message.
-        print("No value for optArg1.")
-
-    if args.optTFArg1 is not None:
-        print(args.optTFArg1)
-    else:
-        # arg is none, so print a message.
-        print("No value for optTFArg1.")
-
-    if args.me1 is not None:
-        print(args.me1)
-    else:
-        # arg is none, so print a message.
-        print("No value for me1.")
-
-    if args.me2 is not None:
-        print(args.me2)
-    else:
-        # arg is none, so print a message.
-        print("No value for me2.")
-
-    if args.me3 is not None:
-        print(args.me3)
-    else:
-        # arg is none, so print a message.
-        print("No value for me3.")
-
-    # get end  processing time
-    procEnd = datetime.now()
-    print("\n**** End Processing ****")
-    print("    Process end time: " + procEnd.strftime("%m/%d/%Y %H:%M:%S"))
-    print("    Duration: " + str(procEnd - procStart) + "\n")
-
+        print("\nNote: ignore_color is forced True at this time. Color ratings \
+are not yet supported.")
 
 # Tell python to run main if this program is executed directly (i.e. not imported)
 if __name__ == "__main__":
