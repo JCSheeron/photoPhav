@@ -38,6 +38,7 @@ and/or color ratings. See main.docstring for additional information.
 #
 # Standard library and system imports
 # import sys
+import re # regular expressions
 
 # Third party and library imports
 
