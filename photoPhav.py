@@ -61,35 +61,65 @@ def main():
     PhotoPhav (as in Photo Favorites) will create links to favorite images based on 'star'
     and/or color ratings.
 
-    A souce directory will be searced for image files. (TODO: Document types). For
-    each image file found, inspect the xmp metadata. If the star rating is above
+    A souce directory will be searced for image files. For each image file
+    found, inspect the xmp metadata. If the star rating is above
     a value (default: 1) create a link to the file in the destination
     directory. If the color rating is above a value (TODO: What Value), then create
     a link to the file in the destinaiton directory.
 
-    The star rating threshold can be specified with the -sr, --star-rating argument.
-    Values at or above the indicated value will be included. Default: 1
+    The supported file types are: JPEG, TIFF, GIF, PNG, PSD, INDESIGN, MOV, MP3,
+    MPEG2, MPEG4, AVI, FLV, SWF, ASF, POSTSCRIPT, P2, SONYHDV, AVCHD, UCF, WAV,
+    XDCAM, XDCAMEX.
+
+    The star rating threshold can be specified with the -sr, --star-rating <rating>
+    option, where rating is 1-5. Values at or above the indicated value will be
+    included. Default: 1
 
     The star rating will be ignored if the -is, --ignore-star option is given.
 
-    The color rating threshold can be specified with the -cr, --color-rating argument.
-    Values at or above the indicated value will be included. **Default value??**
+    The color rating threshold can be specified with the -cr, --color-rating <rating>
+    option where rating is ???. Values at or above the indicated value will be
+    included. **Default value??** NOTE: Not yet supported.
 
-    The color rating will be ignored if the -ic, --ignore-star option is given.
+    The color rating will be ignored if the -ic, --ignore-color option is given.
     Default: true (ignore color rating by default)
 
-    A source directory can be provided with the -sd, --source-dir argument to specify
-    the directory to use for the source images. If this option is not provided,
-    the working directory will used as the source directory.
+    A source directory can be provided with the -sd, --source-dir <path> option
+    to specify the directory to use for the source images. If this option is
+    not provided, the working directory will used as the source directory.
 
-    A destinaiton directory can be provided with the -dd, --dest-dir argument to specify
-    the directory to use for the link destination. If this option is not provided,
-    the working directory will used as the source directory.
+    A destinaiton directory can be provided with the -dd, --dest-dir <path> option
+    to specify the directory to use for the link destination. If this option
+    is not provided, the './favorites' directory (a favorites sub-directory in
+    the working directory) will be used for the destination path.
 
     The -r, -R, --recursive option searches the source directory recursively. If
     images are found in sub folders, the same directory structure will be used
-    in the destination (TODO: Naming conflict with orginal file vs link file in 
-    the same directory structure.`
+    for the destination directory structure.
+
+    The -f, --file-types <type> or <type list> option allows a single file type,
+    or space, comma, or semicolon separated list of file types.
+    Supported file types are listed above. The option values not case sensitive,
+    but otherwise need to match one of the options lsited above.
+
+    The -g, --globp <pattern> option allows files to be searched using a glob
+    pattern. Mutually exclusive with the -e/--regexp option.
+
+    The -e, --regexp <pattern> option allows files to be searched using a
+    regular expression. Mutually exclusive with the -g/--globp option.
+
+    The -i, --ignore-case option ignores file name case when matching using a glob
+    pattern or regex patten. This option is ignored if neither the -g or -e,
+    patterns are specified.
+
+    The -v, --verbose option increases output messaging. Mutually exclusive
+    with -q and -w.
+
+    The -q, --quiet option eliminates output messaging, even in the event of
+    errors. Mutually exclusive with -v and -w.
+
+    The -w, --show-errors-and-warnings option does exactly that. Mutually
+    exclusive with -v and -q.
     """
     # Descripiton string will show up in help.
     DESC_STR = main.__doc__
@@ -150,10 +180,9 @@ to use the working directoy."
     parser.add_argument(
         "-dd",
         "--destination-dir",
-        default=".",
+        default="./favorites",
         metavar="",
-        help="Destination directory.  Create the links here. Omit or specify '.' \
-to use the working directoy."
+        help="Destination directory.  Create the links here. Default is './favorites'."
     )
     # recurse thru the source directory
     parser.add_argument(
@@ -163,12 +192,58 @@ to use the working directoy."
         action="store_true",
         help="Search the source directory recursively."
     )
-    # verbose output
+    # file types
     parser.add_argument(
+        "-f",
+        "--file-types",
+        metavar="",
+        help="Limit processing to specifed file types. Not case sensitive. \
+Valid values are: JPEG, TIFF, GIF, PNG, PSD, INDESIGN, MOV, MP3, MPEG2, MPEG4, \
+AVI, FLV, SWF, ASF, POSTSCRIPT, P2, SONYHDV, AVCHD, UCF, WAV, XDCAM, XDCAMEX.",
+    )
+    # Mutually exclusive pattern group
+    og_pattern = parser.add_mutually_exclusive_group(required=False)
+    og_pattern.add_argument(
+        "-g",
+        "--globp",
+        metavar="",
+        help="Glob sytle pattern. Mutually exclusivc with -e/--regexp option."
+    )
+    og_pattern.add_argument(
+        "-e",
+        "--regexp",
+        metavar="",
+        help="Regular expression sytle pattern. Mutually exclusivc with -g/--globp option."
+    )
+    # ignore case if file name otherwise matches the glob or regex pattern
+    parser.add_argument(
+        "-i",
+        "--ignore-case",
+        action="store_true",
+        help="Ignore case if file name otherwise matches the glob or regex pattern. \
+Ignored if neither -g/--globp or -e/--regexp options are specified."
+    )
+    # Mutually exclusive output messaging group
+    og_output = parser.add_mutually_exclusive_group(required=False)
+    # verbose output
+    og_output.add_argument(
         "-v",
         "--verbose",
         action="store_true",
-        help="Verbose output, usually used for troubleshooting."
+        help="Verbose output"
+    )
+    # quiet output
+    og_output.add_argument(
+        "-q",
+        "--quiet",
+        action="store_true",
+        help="Supress all output, including errors and warnings."
+    )
+    # show only errors and warnings
+    og_output.add_argument(
+        "--show-errors-and_warnings",
+        action="store_true",
+        help="Show only errors and warnings."
     )
     # parse the arguments
     args = parser.parse_args()
@@ -180,11 +255,15 @@ to use the working directoy."
     # args.color_rating int         1
     # args.ignore_color bool        False   Forced True for now to ignore color rating
     # args.source_dir   string      .
-    # args.destination_dir   string .
+    # args.destination_dir string   ./favorites
     # args.recursive    bool        False
-    # args.ignore-case  bool        False   case sensitive by default
+    # args.fileTypes    string      None    single value, or comma or space or semicolon delimited
+    # args.globp        string      None    (globp | regexp) 
     # args.regexp       string      None
-    # args.verbose      bool        False
+    # args.ignore-case  bool        False   case sensitive by default
+    # args.verbose      bool        False   Increase messaging (v | q | w)
+    # args.quiet        bool        False   No messaging, not even for errors
+    # args.show-errors-and-warnings bool False
 
     # Force ignore_color to be true for now
     args.ignore_color = True
