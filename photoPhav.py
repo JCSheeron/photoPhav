@@ -91,7 +91,7 @@ def main():
 
     A destinaiton directory can be provided with the -dd, --dest-dir <path> option
     to specify the directory to use for the link destination. If this option
-    is not provided, the './favorites' directory (a favorites sub-directory in
+    is not provided, the 'favorites' directory (a favorites sub-directory in
     the working directory) will be used for the destination path.
 
     The -r, -R, --recursive option searches the source directory recursively. If
@@ -102,6 +102,13 @@ def main():
     or space, comma, or semicolon separated list of file types.
     Supported file types are listed above. The option values not case sensitive,
     but otherwise need to match one of the options lsited above.
+
+    The -x, --xmp-priority option will give priority to information in an xmp sidecar file if
+    one exists. Without this option, priority is given to the image file over
+    the xmp file. In order to be considered, a file with the same name as an
+    image file ending in 'xmp' (case insensitive) must be found.
+
+    The -ix, --ignore-xmp option will ignore xmp sidecar file(s), even if they are present.
 
     The -g, --globp <pattern> option allows files to be searched using a glob
     pattern. Mutually exclusive with the -e/--regexp option.
@@ -201,6 +208,22 @@ to use the working directoy."
         help="Limit processing to specifed file types. Not case sensitive. \
 Valid values are: JPEG, TIFF, GIF, PNG, PSD, INDESIGN, MOV, MP3, MPEG2, MPEG4, \
 AVI, FLV, SWF, ASF, POSTSCRIPT, P2, SONYHDV, AVCHD, UCF, WAV, XDCAM, XDCAMEX.",
+    )
+    #xmp options
+    parser.add_argument(
+        "-x",
+        "--xmp-priority",
+        metavar="",
+        help="Give priority to information in an xmp sidecar file if one \
+exists. Without this option, priority is given to the image file over \
+the xmp file. In order to be considered, a file with the same name as an \
+image file ending in 'xmp' (case insensitive) must be found."
+    )
+    parser.add_argument(
+        "-ix",
+        "--ignore-xmp",
+        metavar="",
+        help="Ignore xmp files even if they are present."
     )
     # Mutually exclusive pattern group
     og_pattern = parser.add_mutually_exclusive_group(required=False)
