@@ -91,8 +91,9 @@ def main():
 
     A destinaiton directory can be provided with the -dd, --dest-dir <path> option
     to specify the directory to use for the link destination. If this option
-    is not provided, the 'favorites' directory (a favorites sub-directory in
-    the working directory) will be used for the destination path.
+    is not provided, a 'favorites' sub directory in the working directory
+    will first be created if it does not exist, and will used for the
+    destination path.
 
     The -r, -R, --recursive option searches the source directory recursively. If
     images are found in sub folders, the same directory structure will be used
@@ -103,12 +104,16 @@ def main():
     Supported file types are listed above. The option values not case sensitive,
     but otherwise need to match one of the options lsited above.
 
-    The -x, --xmp-priority option will give priority to information in an xmp sidecar file if
-    one exists. Without this option, priority is given to the image file over
-    the xmp file. In order to be considered, a file with the same name as an
-    image file ending in 'xmp' (case insensitive) must be found.
+    The -x, --xmp-priority option will give priority to information in an xmp
+    sidecar file if one exists. Without this option, priority is given to the
+    image file over the xmp file, and the xmp file would only be used if there
+    was not rating or color information in the image file. In all cases, in
+    order to be considered, a file with the same name as the image file ending
+    in 'xmp' (case insensitive) must be found. Mutually exclusive with the 
+    -ix/--ignore-xmp option.
 
-    The -ix, --ignore-xmp option will ignore xmp sidecar file(s), even if they are present.
+    The -ix, --ignore-xmp option will ignore xmp sidecar file(s), even if they
+    are present. Mutually exclusive with the -x/--xmp-priority option.
 
     The -g, --globp <pattern> option allows files to be searched using a glob
     pattern. Mutually exclusive with the -e/--regexp option.
@@ -148,7 +153,8 @@ def main():
         "--star-rating",
         default=1,
         type=int,
-        metavar="",
+        choices=range(1,6), # 1-5
+        metavar="rating",
         help="Star rating. Values equal or greater are considered Favorites \
 and a link will be created. Default value is 1, so any stared image is a favorite."
     )
@@ -164,7 +170,8 @@ and a link will be created. Default value is 1, so any stared image is a favorit
         "--color-rating",
         default=1,
         type=int,
-        metavar="",
+        choices=range(1,11), # 1-10
+        metavar="rating",
         help="Color rating. Values equal are considered Favorites \
 and a link will be created."
     )
@@ -180,17 +187,20 @@ Ignore color ratings if set (default)."
         "-sd",
         "--source-dir",
         default=".",
-        metavar="",
-        help="Source directory. Look here for image files. Omit or specify '.' \
-to use the working directoy."
+        metavar="path",
+        help="Source directory. Look in this directory for image files. Omit \
+the option or specify '.' to use the working directory."
     )
     # destination dir
     parser.add_argument(
         "-dd",
         "--destination-dir",
-        default="./favorites",
-        metavar="",
-        help="Destination directory.  Create the links here. Default is './favorites'."
+        default="favorites",
+        metavar="path",
+        help="Destination directory.  Create the links in this directory. \
+If this option is not provided, a 'favorites' sub directory in the working \
+directory will first be created if it does not exist, and will used for the \
+destination path."
     )
     # recurse thru the source directory
     parser.add_argument(
@@ -198,31 +208,34 @@ to use the working directoy."
         "-R",
         "--recursive",
         action="store_true",
-        help="Search the source directory recursively."
+        help="Search for image files recursively, starting at the source directory."
     )
     # file types
     parser.add_argument(
         "-f",
         "--file-types",
-        metavar="",
+        metavar="file type OR [file type1, file type 2 ...]",
         help="Limit processing to specifed file types. Not case sensitive. \
 Valid values are: JPEG, TIFF, GIF, PNG, PSD, INDESIGN, MOV, MP3, MPEG2, MPEG4, \
 AVI, FLV, SWF, ASF, POSTSCRIPT, P2, SONYHDV, AVCHD, UCF, WAV, XDCAM, XDCAMEX.",
     )
     #xmp options
-    parser.add_argument(
+    og_xmp = parser.add_mutually_exclusive_group(required=False)
+    og_xmp.add_argument(
         "-x",
         "--xmp-priority",
-        metavar="",
+        action="store_true",
         help="Give priority to information in an xmp sidecar file if one \
-exists. Without this option, priority is given to the image file over \
-the xmp file. In order to be considered, a file with the same name as an \
-image file ending in 'xmp' (case insensitive) must be found."
+exists. Without this option, priority is given to the image file over the xmp \
+file, and the xmp file would only be used if there was not rating or color \
+information in the image file. In all cases, in order to be considered, a file \
+with the same name as the image file ending in 'xmp' (case insensitive) must be \
+found."
     )
-    parser.add_argument(
+    og_xmp.add_argument(
         "-ix",
         "--ignore-xmp",
-        metavar="",
+        action="store_true",
         help="Ignore xmp files even if they are present."
     )
     # Mutually exclusive pattern group
@@ -230,13 +243,13 @@ image file ending in 'xmp' (case insensitive) must be found."
     og_pattern.add_argument(
         "-g",
         "--globp",
-        metavar="",
+        metavar="pattern",
         help="Glob sytle pattern. Mutually exclusivc with -e/--regexp option."
     )
     og_pattern.add_argument(
         "-e",
         "--regexp",
-        metavar="",
+        metavar="pattern",
         help="Regular expression sytle pattern. Mutually exclusivc with -g/--globp option."
     )
     # ignore case if file name otherwise matches the glob or regex pattern
