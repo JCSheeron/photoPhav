@@ -9,8 +9,10 @@
 # C0103 warns that module level vars should be/are constants and should be
 # named accordingly with ALL CAPS in an inconsistent and anyoying way.
 # Also warns of non snake_case naming.
-# Disable this warning.
-# pylint: disable=C0103 # verbose: 'invalid-name'
+# Disable this warning. Note, remove '__' in front to activate the disabling.
+# The '--' is there so the syntax or pylint: disable can be shown Without
+# actually disabling the warning
+# __pylint: disable=C0103 # verbose: 'invalid-name'
 
 # Varialbe Naming Conventions:
 # Class Names: normally use CapWords Conventions
@@ -34,19 +36,17 @@ PhotoPhav (as in Photo Favorites) will create links to favorite images based on 
 and/or color ratings. See main.docstring for additional information.
 """
 
+# arg parser
+import argparse
 # imports
 #
 # Standard library and system imports
 # import sys
-import re # regular expressions
-
-# Third party and library imports
-
+import re  # regular expressions
 # path and file processing
 from pathlib import Path
 
-# arg parser
-import argparse
+# Third party and library imports
 
 
 # Local application and user library imports
@@ -109,7 +109,7 @@ def main():
     image file over the xmp file, and the xmp file would only be used if there
     was not rating or color information in the image file. In all cases, in
     order to be considered, a file with the same name as the image file ending
-    in 'xmp' (case insensitive) must be found. Mutually exclusive with the 
+    in 'xmp' (case insensitive) must be found. Mutually exclusive with the
     -ix/--ignore-xmp option.
 
     The -ix, --ignore-xmp option will ignore xmp sidecar file(s), even if they
@@ -153,16 +153,13 @@ def main():
         "--star-rating",
         default=1,
         type=int,
-        choices=range(1,6), # 1-5
+        choices=range(1, 6),  # 1-5
         metavar="rating",
         help="Star rating. Values equal or greater are considered Favorites \
-and a link will be created. Default value is 1, so any stared image is a favorite."
+and a link will be created. Default value is 1, so any stared image is a favorite.",
     )
     parser.add_argument(
-        "-is",
-        "--ignore-star",
-        action="store_true",
-        help="Ignore star ratings if set."
+        "-is", "--ignore-star", action="store_true", help="Ignore star ratings if set."
     )
     # color rating
     parser.add_argument(
@@ -170,17 +167,17 @@ and a link will be created. Default value is 1, so any stared image is a favorit
         "--color-rating",
         default=1,
         type=int,
-        choices=range(1,11), # 1-10
+        choices=range(1, 11),  # 1-10
         metavar="rating",
         help="Color rating. Values equal are considered Favorites \
-and a link will be created."
+and a link will be created.",
     )
     parser.add_argument(
         "-ic",
         "--ignore-color",
         action="store_true",
         help="NOTE: Not yet supported -- color ratings are always ignored. \
-Ignore color ratings if set (default)."
+Ignore color ratings if set (default).",
     )
     # source dir
     parser.add_argument(
@@ -189,7 +186,7 @@ Ignore color ratings if set (default)."
         default=".",
         metavar="path",
         help="Source directory. Look in this directory for image files. Omit \
-the option or specify '.' to use the working directory."
+the option or specify '.' to use the working directory.",
     )
     # destination dir
     parser.add_argument(
@@ -200,7 +197,7 @@ the option or specify '.' to use the working directory."
         help="Destination directory.  Create the links in this directory. \
 If this option is not provided, a 'favorites' sub directory in the working \
 directory will first be created if it does not exist, and will used for the \
-destination path."
+destination path.",
     )
     # recurse thru the source directory
     parser.add_argument(
@@ -208,7 +205,7 @@ destination path."
         "-R",
         "--recursive",
         action="store_true",
-        help="Search for image files recursively, starting at the source directory."
+        help="Search for image files recursively, starting at the source directory.",
     )
     # file types
     parser.add_argument(
@@ -219,7 +216,7 @@ destination path."
 Valid values are: JPEG, TIFF, GIF, PNG, PSD, INDESIGN, MOV, MP3, MPEG2, MPEG4, \
 AVI, FLV, SWF, ASF, POSTSCRIPT, P2, SONYHDV, AVCHD, UCF, WAV, XDCAM, XDCAMEX.",
     )
-    #xmp options
+    # xmp options
     og_xmp = parser.add_mutually_exclusive_group(required=False)
     og_xmp.add_argument(
         "-x",
@@ -230,13 +227,13 @@ exists. Without this option, priority is given to the image file over the xmp \
 file, and the xmp file would only be used if there was not rating or color \
 information in the image file. In all cases, in order to be considered, a file \
 with the same name as the image file ending in 'xmp' (case insensitive) must be \
-found."
+found.",
     )
     og_xmp.add_argument(
         "-ix",
         "--ignore-xmp",
         action="store_true",
-        help="Ignore xmp files even if they are present."
+        help="Ignore xmp files even if they are present.",
     )
     # Mutually exclusive pattern group
     og_pattern = parser.add_mutually_exclusive_group(required=False)
@@ -244,13 +241,13 @@ found."
         "-g",
         "--globp",
         metavar="pattern",
-        help="Glob sytle pattern. Mutually exclusivc with -e/--regexp option."
+        help="Glob sytle pattern. Mutually exclusivc with -e/--regexp option.",
     )
     og_pattern.add_argument(
         "-e",
         "--regexp",
         metavar="pattern",
-        help="Regular expression sytle pattern. Mutually exclusivc with -g/--globp option."
+        help="Regular expression sytle pattern. Mutually exclusivc with -g/--globp option.",
     )
     # ignore case if file name otherwise matches the glob or regex pattern
     parser.add_argument(
@@ -258,29 +255,26 @@ found."
         "--ignore-case",
         action="store_true",
         help="Ignore case if file name otherwise matches the glob or regex pattern. \
-Ignored if neither -g/--globp or -e/--regexp options are specified."
+Ignored if neither -g/--globp or -e/--regexp options are specified.",
     )
     # Mutually exclusive output messaging group
     og_output = parser.add_mutually_exclusive_group(required=False)
     # verbose output
     og_output.add_argument(
-        "-v",
-        "--verbose",
-        action="store_true",
-        help="Verbose output"
+        "-v", "--verbose", action="store_true", help="Verbose output"
     )
     # quiet output
     og_output.add_argument(
         "-q",
         "--quiet",
         action="store_true",
-        help="Supress all output, including errors and warnings."
+        help="Supress all output, including errors and warnings.",
     )
     # show only errors and warnings
     og_output.add_argument(
         "--show-errors-and_warnings",
         action="store_true",
-        help="Show only errors and warnings."
+        help="Show only errors and warnings.",
     )
     # parse the arguments
     args = parser.parse_args()
@@ -295,7 +289,7 @@ Ignored if neither -g/--globp or -e/--regexp options are specified."
     # args.destination_dir string   ./favorites
     # args.recursive    bool        False
     # args.fileTypes    string      None    single value, or comma or space or semicolon delimited
-    # args.globp        string      None    (globp | regexp) 
+    # args.globp        string      None    (globp | regexp)
     # args.regexp       string      None
     # args.ignore-case  bool        False   case sensitive by default
     # args.verbose      bool        False   Increase messaging (v | q | w)
@@ -306,10 +300,22 @@ Ignored if neither -g/--globp or -e/--regexp options are specified."
     args.ignore_color = True
 
     if args.verbose:
-        print("\nThe following arguments were parsed:")
-        print(args)
-        print("\nNote: ignore_color is forced True at this time. Color ratings \
-are not yet supported.")
+        # print("\nThe following arguments were parsed:")
+        # print(args)
+        print(
+            "\nNote: ignore_color is forced True at this time. Color ratings \
+are not yet supported."
+        )
+
+    # Establish source and destination paths
+    src_path = Path(args.source_dir)
+    dest_path = Path(args.destination_dir)
+    #if args.verbose:
+    #    print("The source path is:")
+    #    print(src_path.resolve())
+    #    print("The destination path is:")
+    #    print(dest_path.resolve())
+
 
 # Tell python to run main if this program is executed directly (i.e. not imported)
 if __name__ == "__main__":
