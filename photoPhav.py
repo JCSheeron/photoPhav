@@ -51,10 +51,15 @@ from pathlib import Path
 import fnmatch
 import re
 
+# pretty print
+import pprint
+
 # Third party and library imports
-from bpsPrettyPrint import listPrettyPrint1Col
+# xmp processing
+from libxmp.utils import file_to_dict
 
 # Local application and user library imports
+from bpsPrettyPrint import listPrettyPrint1Col
 
 #
 # Note: May need PYTHONPATH (set in ~/.profile?) to be set depending
@@ -305,6 +310,9 @@ Ignored if neither -g/--globp or -e/--regexp options are specified.",
     # Force ignore_color to be true for now
     args.ignore_color = True
 
+    # make a pretty printer
+    pp = pprint.PrettyPrinter(width=41, compact=True)
+
     if args.verbose:
         print("\nThe following arguments were parsed:")
         print(args)
@@ -314,13 +322,13 @@ are not yet supported."
         )
 
     # Establish source and destination paths
-    src_path = Path(args.source_dir)
-    dest_path = Path(args.destination_dir)
+    path_src = Path(args.source_dir)
+    path_dest = Path(args.destination_dir)
     # if args.verbose:
     #    print("The source path is:")
-    #    print(src_path.resolve())
+    #    print(path_src.resolve())
     #    print("The destination path is:")
-    #    print(dest_path.resolve())
+    #    print(path_dest.resolve())
 
     # Search the source directory for files based on recusive, glob, and regex
     # options. Since the case-insensitive globp or regexp options will use regex,
@@ -343,29 +351,29 @@ are not yet supported."
 
     # get all files (including directories), considering recusive search option
     if args.recursive:
-        contents = src_path.rglob("*")
+        contents = path_src.rglob("*")
     else:
-        contents = src_path.glob("*")
+        contents = path_src.glob("*")
 
     # Get the files only -- exclude the directories
-    all_files = [file for file in contents if file.is_file()]
+    path_all_files = [file for file in contents if file.is_file()]
     # if verbose and filtering options are opted, then display the files found
     # before filtering
     if args.verbose and args.globp:
         # extract the path name as a string for display
         print("\nThe following files were found in the source path before applying the glob pattern:")
-        listPrettyPrint1Col([file.as_posix() for file in all_files])
+        listPrettyPrint1Col([file.as_posix() for file in path_all_files])
     elif args.verbose and args.regexp:
         # extract the path name as a string for display
         print("\nThe following files were found in the source path before applying the regex pattern:")
-        listPrettyPrint1Col([file.as_posix() for file in all_files])
+        listPrettyPrint1Col([file.as_posix() for file in path_all_files])
 
-    src_files = [] # This will hold the filtered (final) list of path objects
+    path_src_files = [] # This will hold the filtered (final) list of path objects
     # filter out files based on regex filter
-    for path in all_files:
+    for path in path_all_files:
         try:
             if re.match(re_pattern, path.as_posix()):
-                src_files.append(path)
+                path_src_files.append(path)
         except re.error as err:
             if not args.quiet:
                 print("ERROR: Regular Expression Error. Bad escape.")
@@ -381,7 +389,7 @@ are not yet supported."
         if args.ignore_case:
             print("Note the i-/--ignore_case option is in effect, so file name")
             print("case will ignored when considerig a match.")
-        listPrettyPrint1Col([file.as_posix() for file in src_files])
+        listPrettyPrint1Col([file.as_posix() for file in path_src_files])
     elif args.verbose and args.regexp:
         # extract the path name as a string for display
         print("\nThe following is a list of source files that have been filtered")
@@ -389,11 +397,18 @@ are not yet supported."
         if args.ignore_case:
             print("Note the i-/--ignore_case option is in effect, so file name")
             print("case will ignored when considerig a match.")
-        listPrettyPrint1Col([file.as_posix() for file in src_files])
+        listPrettyPrint1Col([file.as_posix() for file in path_src_files])
     elif args.verbose: # no glob or regex filtering
         # extract the path name as a string for display
         print("\nThe following files were found in the source path:")
-        listPrettyPrint1Col([file.as_posix() for file in src_files])
+        listPrettyPrint1Col([file.as_posix() for file in path_src_files])
+
+    # At this <point> path_src_files is a list of path objects for the files
+    # we want to process.... Let's go!
+    for file in path_src_files:
+        dict_xmp = file_to_dict(file.as_posix())
+        pp.pprint(dict_xmp)
+        sys.exit(2)
 
 # Tell python to run main if this program is executed directly (i.e. not imported)
 if __name__ == "__main__":
