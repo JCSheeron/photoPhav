@@ -7,27 +7,27 @@
 
 # Example of how to disable a pylint check
 # C0103 warns that module level vars should be/are constants and should be
-# named accordingly with ALL CAPS in an inconsistent and anyoying way.
+# named accordingly with ALL CAPS in an inconsistent and annoying way.
 # Also warns of non snake_case naming.
 # Disable this warning. Note, remove '__' in front to activate the disabling.
 # The '--' is there so the syntax or pylint: disable can be shown Without
 # actually disabling the warning
 # __pylint: disable=C0103 # verbose: 'invalid-name'
 
-# Varialbe Naming Conventions:
+# Variable Naming Conventions:
 # Class Names: normally use CapWords Conventions
 # Type Variable Names: CapWords convention, or single cap letter. Prefer short names.
 # Exception Names: CapWords or follow class naming convention.
 #   Suffix should be 'Error', 'Err', 'Warn', etc.
-# Function Names: lowercase_with_underscores. or mixedCase if already prevailing.
-# Variable Names: Follow naming of functions. lowercase_with_underscores or
+# Function Names: lowercase_with_underscores, or mixedCase if already prevailing.
+# Variable Names: Follow naming of functions, lowercase_with_underscores or
 #   mixedCase if already prevailing.
 # Function and Method Arguments:
 #   'self' as first argument for instance methods.
 #   'cls' as first argument to class methods.
 #   Append underscore '_' in the event of a name clash. Better: use synonym.
 # Method Names and Instance Variables: Follow function naming rules: lowercase_with_underscores.
-#   Use one leading underscore for non-public methods and instance varialbes.
+#   Use one leading underscore for non-public methods and instance variables.
 #   Use two leading underscores to invoke name mangling rules._
 # Constants: ALL_CAPS_WITH_UNDERSCORES. Usually defined on a module level.
 
@@ -72,15 +72,11 @@ def main():
     PhotoPhav (as in Photo Favorites) will create links to favorite images based on 'star'
     and/or color ratings.
 
-    A souce directory will be searced for image files. For each image file
+    A source directory will be searched for image files. For each image file
     found, inspect the xmp metadata. If the star rating is above
     a value (default: 1) create a link to the file in the destination
     directory. If the color rating is above a value (TODO: What Value), then create
-    a link to the file in the destinaiton directory.
-
-    The supported file types are: JPEG, TIFF, GIF, PNG, PSD, INDESIGN, MOV, MP3,
-    MPEG2, MPEG4, AVI, FLV, SWF, ASF, POSTSCRIPT, P2, SONYHDV, AVCHD, UCF, WAV,
-    XDCAM, XDCAMEX.
+    a link to the file in the destination directory.
 
     The star rating threshold can be specified with the -sr, --star_rating <rating>
     option, where rating is 1-5. Values at or above the indicated value will be
@@ -99,7 +95,7 @@ def main():
     to specify the directory to use for the source images. If this option is
     not provided, the working directory will used as the source directory.
 
-    A destinaiton directory can be provided with the -dd, --dest_dir <path> option
+    A destination directory can be provided with the -dd, --dest_dir <path> option
     to specify the directory to use for the link destination. If this option
     is not provided, a 'favorites' sub directory in the working directory
     will first be created if it does not exist, and will used for the
@@ -109,21 +105,14 @@ def main():
     images are found in sub folders, the same directory structure will be used
     for the destination directory structure.
 
-    The -f, --file_types <type> or <type list> option allows a single file type,
-    or space, comma, or semicolon separated list of file types.
-    Supported file types are listed above. The option values not case sensitive,
-    but otherwise need to match one of the options lsited above.
-
-    The -x, --xmp_priority option will give priority to information in an xmp
-    sidecar file if one exists. Without this option, priority is given to the
-    image file over the xmp file, and the xmp file would only be used if there
-    was not rating or color information in the image file. In all cases, in
-    order to be considered, a file with the same name as the image file ending
-    in 'xmp' (case insensitive) must be found. Mutually exclusive with the
-    -ix/--ignore_xmp option.
+    The -fp, --file_priority option will give priority to information embedded
+    in the image file. Without this option, priority is given to a xmp
+    'sidecar' file if one exists, and the embedded xmp data would only be used
+    if the xmp sidecar file does not exist, or if the xmp file does exist, but
+    contains no star rating or color rating information.
 
     The -ix, --ignore_xmp option will ignore xmp sidecar file(s), even if they
-    are present. Mutually exclusive with the -x/--xmp_priority option.
+    are present.
 
     The -g, --globp <pattern> option allows files to be searched using a glob
     pattern. Mutually exclusive with the -e/--regexp option.
@@ -132,7 +121,7 @@ def main():
     regular expression. Mutually exclusive with the -g/--globp option.
 
     The -i, --ignore_case option ignores file name case when matching using a glob
-    pattern or regex patten. This option is ignored if neither the -g or -e,
+    pattern or regex pattern. This option is ignored if neither the -g or -e,
     patterns are specified.
 
     The -v, --verbose option increases output messaging. Mutually exclusive
@@ -141,12 +130,13 @@ def main():
     The -q, --quiet option eliminates output messaging, even in the event of
     errors. Mutually exclusive with -v and -w.
 
-    The -w, --show_ew option does exactly that. Mutually exclusive with -v and -q.
+    The -w, --show_ew show errors and warning option.
+    Mutually exclusive with -v and -q.
     """
-    # Descripiton string will show up in help.
+    # Description string will show up in help.
     DESC_STR = main.__doc__
-    # Create an epilog string to further describe the input file
-    # The epilog will show up at the bottom of the help
+    # Create an epilogue string to further describe the input file
+    # The epilogue will show up at the bottom of the help
     EPL_STR = ""
 
     # **** argument parsing
@@ -208,7 +198,7 @@ If this option is not provided, a 'favorites' sub directory in the working \
 directory will first be created if it does not exist, and will used for the \
 destination path.",
     )
-    # recurse thru the source directory
+    # recourse thru the source directory
     parser.add_argument(
         "-r",
         "-R",
@@ -216,29 +206,18 @@ destination path.",
         action="store_true",
         help="Search for image files recursively, starting at the source directory.",
     )
-    # file types
-    parser.add_argument(
-        "-f",
-        "--file_types",
-        metavar="file type OR 'file type1, file type 2 ...'",
-        help="Limit processing to specifed file types. Not case sensitive. \
-Valid values are: JPEG, TIFF, GIF, PNG, PSD, INDESIGN, MOV, MP3, MPEG2, MPEG4, \
-AVI, FLV, SWF, ASF, POSTSCRIPT, P2, SONYHDV, AVCHD, UCF, WAV, XDCAM, XDCAMEX.",
-    )
     # xmp options
-    og_xmp = parser.add_mutually_exclusive_group(required=False)
-    og_xmp.add_argument(
-        "-x",
-        "--xmp_priority",
+    parser.add_argument(
+        "-fp",
+        "--file_priority",
         action="store_true",
-        help="Give priority to information in an xmp sidecar file if one \
-exists. Without this option, priority is given to the image file over the xmp \
-file, and the xmp file would only be used if there was not rating or color \
-information in the image file. In all cases, in order to be considered, a file \
-with the same name as the image file ending in 'xmp' (case insensitive) must be \
-found.",
+        help="Give priority to information embedded in the image file. Without \
+this option, priority is given to a xmp 'sidecar' file if one exists, and the \
+embedded xmp data would only be used if the xmp sidecar file does not exist, or \
+if the xmp file does exist, but contains no star rating or color rating \
+information.",
     )
-    og_xmp.add_argument(
+    parser.add_argument(
         "-ix",
         "--ignore_xmp",
         action="store_true",
@@ -250,13 +229,13 @@ found.",
         "-g",
         "--globp",
         metavar="pattern",
-        help="Glob sytle pattern. Mutually exclusivc with -e/--regexp option.",
+        help="Glob style pattern. Mutually exclusive with -e/--regexp option.",
     )
     og_pattern.add_argument(
         "-e",
         "--regexp",
         metavar="pattern",
-        help="Regular expression sytle pattern. Mutually exclusivc with -g/--globp option.",
+        help="Regular expression style pattern. Mutually exclusive with -g/--globp option.",
     )
     # ignore case if file name otherwise matches the glob or regex pattern
     parser.add_argument(
@@ -277,7 +256,7 @@ Ignored if neither -g/--globp or -e/--regexp options are specified.",
         "-q",
         "--quiet",
         action="store_true",
-        help="Supress all output, including errors and warnings.",
+        help="Suppress all output, including errors and warnings.",
     )
     # show only errors and warnings
     og_output.add_argument(
@@ -298,7 +277,7 @@ Ignored if neither -g/--globp or -e/--regexp options are specified.",
     # args.destination_dir  string      favorites
     # args.recursive        bool        False
     # args.fileTypes        string      None    single value, or comma or space or semicolon delimited
-    # args.xmp_priority     bool        False
+    # args.file_priority    bool        False
     # args.ignore_xmp       bool        False
     # args.globp            string      None    (globp | regexp)
     # args.regexp           string      None
@@ -330,7 +309,7 @@ are not yet supported."
     #    print("The destination path is:")
     #    print(path_dest.resolve())
 
-    # Search the source directory for files based on recusive, glob, and regex
+    # Search the source directory for files based on recursive, glob, and regex
     # options. Since the case-insensitive globp or regexp options will use regex,
     # simplify the pattern matching by using glob(*)/rgblob(*) and the using
     # regex to match patterns, converting glopb option to a regex if necessary.
@@ -349,7 +328,7 @@ are not yet supported."
     # At this point, any file name filtering will be done with regex. Glob
     # patterns were converted to regex above.
 
-    # get all files (including directories), considering recusive search option
+    # get all files (including directories), considering recursive search option
     if args.recursive:
         contents = path_src.rglob("*")
     else:
