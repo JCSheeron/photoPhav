@@ -344,12 +344,13 @@ are not yet supported."
         print("\nThe following files were found in the source path before applying the regex pattern:")
         listPrettyPrint1Col([file.as_posix() for file in path_all_files])
 
-    path_src_files = [] # This will hold the filtered (final) list of path objects
+    src_files = [] # This will hold the filtered (final) list of full path names
     # filter out files based on regex filter
     for path in path_all_files:
+        fp = path.as_posix() # get full path name
         try:
-            if re.match(re_pattern, path.as_posix()):
-                path_src_files.append(path)
+            if re.match(re_pattern, fp):
+                src_files.append(fp)
         except re.error as err:
             if not args.quiet:
                 print("ERROR: Regular Expression Error. Bad escape?")
@@ -363,32 +364,36 @@ are not yet supported."
         print("\nThe following is a list of source files that have been filtered")
         print("with the '" + args.globp + "' glob pattern:")
         if args.ignore_case:
-            print("Note the i-/--ignore_case option is in effect, so file name")
-            print("case will ignored when considerig a match.")
-        listPrettyPrint1Col([file.as_posix() for file in path_src_files])
+            print("\nNote the i-/--ignore_case option is in effect, so file name")
+            print("case will ignored when considering a match.\n")
+        listPrettyPrint1Col([src_files])
     elif args.verbose and args.regexp:
         # extract the path name as a string for display
         print("\nThe following is a list of source files that have been filtered")
         print("with the '" + args.regexp + "' regex pattern:")
         if args.ignore_case:
             print("Note the i-/--ignore_case option is in effect, so file name")
-            print("case will ignored when considerig a match.")
-        listPrettyPrint1Col([file.as_posix() for file in path_src_files])
+            print("case will ignored when considering a match.")
+        listPrettyPrint1Col([src_files])
     elif args.verbose: # no glob or regex filtering
         # extract the path name as a string for display
         print("\nThe following files were found in the source path:")
-        listPrettyPrint1Col([file.as_posix() for file in path_src_files])
+        listPrettyPrint1Col([src_files])
 
-    # At this <point> path_src_files is a list of path objects for the files
+    # At this point, src_files is a list of paths for the files
     # we want to process.... Let's go!
 
     # Go through the source files. For each non "*.xmp" (case insensitive) file
-    # encountered, create a dictionary. See below for structure.
+    # encountered, create a dictionary. See below for structure. If xmp files
+    # are not ignored, and a corresponding xmp file is also in the list, create
+    # the dictionary key and update the list the xmp file isn't considered 
+    # again.
+    #
     # If xmp files are encountered, and not ignored, 'pair' them with a file
     # by updating the file dictionary. If there are xmp files that do not
     # match a file name, keep track of that so a warning can be issued.
-    # dictsFiles will be a list of dictionaryies [ {}, {}, ... {} ] with
-    # one dictionary per file. Each dictionary will have the following strucrue:
+    # dictsFiles will be a list of dictionaries [ {}, {}, ... {} ] with
+    # one dictionary per file. Each dictionary will have the following structure:
     # {
     #   name: full path name of image file
     #   embedded_xmp: True/False, True if xmp data is found, default false.
@@ -396,10 +401,38 @@ are not yet supported."
     #   star_rating: Default to None.
     #   color_rating: Default to None
     # }
-    dictsFiles = []
+    dicts_files = [] # list of dictionaries describing files
+    set_orphaned_xml = set() # set of orphaned xml files
 
+    def xmp_match(fpath, path_list):
+        """Given a full path string to a file and a list of files, return
+        true if the same path, but ending in '.xmp' exists in the list. The path
+        string may end in a .<suffix>, and a match will be considered if the
+        list contains the same string, only ending in '*.xmp', case insensitive."""
+        # path root suffix -- full path without original suffix and .xmp
+        # suffix added.
+        prs = fpath.rsplit('.', 1)[0] + ".xmp"
+        return prs in path_list
+
+    def file_match(xpath, path_list):
+        """Given a full path string to an xmp file and a list of files, return
+        true if the same path, but with a suffix that is not "*.xmp" exists in
+        the list."""
+        # path root suffix -- full path without original suffix
+        pr_split = xpath.rsplit('.', 1)
+        def filterFunction(pr_split, path_list):
+            path.rsplit('.', 1) for path in path_list
+        fnMatch = lambda tps, 
+        return prs in path_list
     for file in path_src_files:
-        if file.suffix.lower() == "xmp":
+        if file.suffix.lower() != "xmp":
+            # non xmp file case
+            # if xmp is not ignored, see if there is a *.xmp file with the same
+            # name other than the suffix.
+
+            pass
+        elif file.suffix.lower() == "xmp" and not args.ignore_xmp:
+            # xmp file, and not set to ignore them
             pass
 
 
