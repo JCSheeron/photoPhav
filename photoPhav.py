@@ -40,26 +40,23 @@ and/or color ratings. See main.docstring for additional information.
 
 # arg parser
 import argparse
+# file name matching and regular expressions
+import fnmatch
+# pretty print
+import pprint
+import re
 # imports
 #
 # Standard library and system imports
 import sys
-
 # path and file processing
 from pathlib import Path
-# file name matching and regular expressions
-import fnmatch
-import re
-
-# pretty print
-import pprint
-
-# Third party and library imports
-# xmp processing
-from libxmp.utils import file_to_dict
 
 # Local application and user library imports
 from bpsPrettyPrint import listPrettyPrint1Col
+# Third party and library imports
+# xmp processing
+from libxmp.utils import file_to_dict
 
 #
 # Note: May need PYTHONPATH (set in ~/.profile?) to be set depending
@@ -355,7 +352,7 @@ are not yet supported."
                 path_src_files.append(path)
         except re.error as err:
             if not args.quiet:
-                print("ERROR: Regular Expression Error. Bad escape.")
+                print("ERROR: Regular Expression Error. Bad escape?")
                 print(err)
                 sys.exit("Exiting.")
             else:
@@ -384,10 +381,33 @@ are not yet supported."
 
     # At this <point> path_src_files is a list of path objects for the files
     # we want to process.... Let's go!
+
+    # Go through the source files. For each non "*.xmp" (case insensitive) file
+    # encountered, create a dictionary. See below for structure.
+    # If xmp files are encountered, and not ignored, 'pair' them with a file
+    # by updating the file dictionary. If there are xmp files that do not
+    # match a file name, keep track of that so a warning can be issued.
+    # dictsFiles will be a list of dictionaryies [ {}, {}, ... {} ] with
+    # one dictionary per file. Each dictionary will have the following strucrue:
+    # {
+    #   name: full path name of image file
+    #   embedded_xmp: True/False, True if xmp data is found, default false.
+    #   xmp_file: full path to xmp file, Default None, and None if no xmp file found.
+    #   star_rating: Default to None.
+    #   color_rating: Default to None
+    # }
+    dictsFiles = []
+
     for file in path_src_files:
-        dict_xmp = file_to_dict(file.as_posix())
-        pp.pprint(dict_xmp)
-        sys.exit(2)
+        if file.suffix.lower() == "xmp":
+            pass
+
+
+
+    # for file in path_src_files:
+    #     dict_xmp = file_to_dict(file.as_posix())
+    #     pp.pprint(dict_xmp)
+    #     sys.exit(2)
 
 # Tell python to run main if this program is executed directly (i.e. not imported)
 if __name__ == "__main__":
