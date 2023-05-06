@@ -403,7 +403,7 @@ are not yet supported."
     files_no_xmp_data = [] # list of full path file names with xmp data
     files_rated = [] # list of full path file names that are rated
 
-    def get_rating(props):
+    def get_embedded_rating(props):
         """Given properties (props) as a list of tuples, extract the Rating
         as an integer. Return 0 if not found."""
         r_tuple = tuple(filter(lambda iterable: "xmp:Rating" in iterable, props))
@@ -412,7 +412,11 @@ are not yet supported."
         # ("xmp:Rating", <rating value as a string>, {dict_of_entry properties})
         # We want the rating as an integer
         if r_tuple:
-            return(int(r_tuple[0][1]))
+            # return 0 if extracted rating cannot be an integer
+            try:
+                return(int(r_tuple[0][1]))
+            except ValueError:
+                return 0
        # if we get here, the tuple was empty, and there is no rating
         return 0
 
@@ -429,7 +433,7 @@ are not yet supported."
                 files_xmp_data.append(file)
                 props = dict_xmp[xmp_consts.XMP_NS_XMP]
                 print(f"Xmp namespace data found embedded in file {file}")
-                rating = get_rating(props)
+                rating = get_embedded_rating(props)
                 if rating > 0:
                     files_rated.append(file)
             except KeyError as ke:
@@ -437,6 +441,8 @@ are not yet supported."
         else:
                 print(f"No xmp data found embedded in file {file}")
                 files_no_xmp_data.append(file)
+    print("\nXMP files found:")
+    pprint.pprint(file_names_xmp)
     print("\nThere was XMP data was found in these files:")
     pprint.pprint(files_xmp_data)
     print("\nThere was NO XMP data found in these files:")
