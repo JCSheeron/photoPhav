@@ -360,7 +360,7 @@ are not yet supported."
         fp = path.as_posix() # get full path name
         try:
             if re.match(re_pattern, fp):
-                src_files.append(fp)
+                path_src_files.append(path)
         except re.error as err:
             if not args.quiet:
                 print("ERROR: Regular Expression Error. Bad escape?")
@@ -376,7 +376,7 @@ are not yet supported."
         if args.ignore_case:
             print("\nNote the i-/--ignore_case option is in effect, so file name")
             print("case will ignored when considering a match.\n")
-        listPrettyPrint1Col([src_files])
+        listPrettyPrint1Col([path_src_files])
     elif args.verbose and args.regexp:
         # extract the path name as a string for display
         print("\nThe following is a list of source files that have been filtered")
@@ -388,7 +388,7 @@ are not yet supported."
     elif args.verbose:  # no glob or regex filtering
         # extract the path name as a string for display
         print("\nThe following files were found in the source path:")
-        listPrettyPrint1Col([src_files])
+        listPrettyPrint1Col([path_src_files])
 
     # At this point, path_src_files is a list of path objects for the files
     # we want to process.... Let's go!
@@ -403,26 +403,19 @@ are not yet supported."
     files_no_xmp_data = [] # list of full path file names with xmp data
     files_rated = [] # list of full path file names that are rated
 
-    def xmp_match(fpath, path_list):
-        """Given a full path string to a file and a list of files, return
-        true if the same path, but ending in '.xmp' exists in the list. The path
-        string may end in a .<suffix>, and a match will be considered if the
-        list contains the same string, only ending in '*.xmp', case insensitive."""
-        # path root suffix -- full path without original suffix and .xmp
-        # suffix added.
-        prs = fpath.rsplit('.', 1)[0] + ".xmp"
-        return prs in path_list
+    def get_rating(props):
+        """Given properties (props) as a list of tuples, extract the Rating
+        as an integer. Return 0 if not found."""
+        r_tuple = tuple(filter(lambda iterable: "xmp:Rating" in iterable, props))
+        # If no rating is found, return 0
+        # If a rating entry is found, then it is in a tuple with the format:
+        # ("xmp:Rating", <rating value as a string>, {dict_of_entry properties})
+        # We want the rating as an integer
+        if r_tuple:
+            return(int(r_tuple[0][1]))
+       # if we get here, the tuple was empty, and there is no rating
+        return 0
 
-    def file_match(xpath, path_list):
-        """Given a full path string to an xmp file and a list of files, return
-        true if the same path, but with a suffix that is not "*.xmp" exists in
-        the list."""
-        # path root suffix -- full path without original suffix
-        pr_split = xpath.rsplit('.', 1)
-        def filterFunction(pr_split, path_list):
-            path.rsplit('.', 1) for path in path_list
-        fnMatch = lambda tps, 
-        return prs in path_list
     for file in path_src_files:
         if not args.ignore_xmp and file.suffix.lower() == ".xmp":
             file_names_xmp.append(file.as_posix())
@@ -434,11 +427,10 @@ are not yet supported."
         if dict_xmp:
             try:
                 files_xmp_data.append(file)
-                prop = dict_xmp[xmp_consts.XMP_NS_XMP]
+                props = dict_xmp[xmp_consts.XMP_NS_XMP]
                 print(f"Xmp namespace data found embedded in file {file}")
-                print("prop:")
-                pprint.pprint(prop)
-                if "xmp:Rating" in prop:
+                rating = get_rating(props)
+                if rating > 0:
                     files_rated.append(file)
             except KeyError as ke:
                 print(f"No xmp namespace data found embedded in file {file}")
