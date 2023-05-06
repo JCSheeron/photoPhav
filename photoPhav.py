@@ -5,6 +5,9 @@
 # above seems to work and be more portable
 #!/home/jcsheeron/swDev/python/ftArchPostProc/bin/python
 
+# turn off import sorting for this file
+# isort: skip_file
+
 # Example of how to disable a pylint check
 # C0103 warns that module level vars should be/are constants and should be
 # named accordingly with ALL CAPS in an inconsistent and annoying way.
@@ -38,27 +41,30 @@ PhotoPhav (as in Photo Favorites) will create links to favorite images based on 
 and/or color ratings. See main.docstring for additional information.
 """
 
-# arg parser
-import argparse
-# file name matching and regular expressions
-import fnmatch
-# pretty print
-import pprint
-import re
 # imports
-#
+
 # Standard library and system imports
 import sys
-# path and file processing
-from pathlib import Path
 
-# Local application and user library imports
-from bpsPrettyPrint import listPrettyPrint1Col
+# arg parser
+import argparse
+
+# path, file processing, and regular expressions
+from pathlib import Path
+import re
+import fnmatch
+
+# pretty print
+import pprint
+
 # Third party and library imports
 # xmp processing
 from libxmp.utils import file_to_dict
+from libxmp import consts as xmp_consts # constants
 
-#
+# Local application and user library imports
+from bpsPrettyPrint import listPrettyPrint1Col
+
 # Note: May need PYTHONPATH (set in ~/.profile?) to be set depending
 # on the location of the imported files
 
@@ -337,14 +343,18 @@ are not yet supported."
     # before filtering
     if args.verbose and args.globp:
         # extract the path name as a string for display
-        print("\nThe following files were found in the source path before applying the glob pattern:")
+        print(
+            "\nThe following files were found in the source path before applying the glob pattern:"
+        )
         listPrettyPrint1Col([file.as_posix() for file in path_all_files])
     elif args.verbose and args.regexp:
         # extract the path name as a string for display
-        print("\nThe following files were found in the source path before applying the regex pattern:")
+        print(
+            "\nThe following files were found in the source path before applying the regex pattern:"
+        )
         listPrettyPrint1Col([file.as_posix() for file in path_all_files])
 
-    path_src_files = [] # This will hold the filtered (final) list of path objects
+    path_src_files = []  # This will hold the filtered (final) list of path objects
     # filter out files based on regex filter
     for path in path_all_files:
         try:
@@ -374,40 +384,54 @@ are not yet supported."
             print("Note the i-/--ignore_case option is in effect, so file name")
             print("case will ignored when considerig a match.")
         listPrettyPrint1Col([file.as_posix() for file in path_src_files])
-    elif args.verbose: # no glob or regex filtering
+    elif args.verbose:  # no glob or regex filtering
         # extract the path name as a string for display
         print("\nThe following files were found in the source path:")
         listPrettyPrint1Col([file.as_posix() for file in path_src_files])
 
-    # At this <point> path_src_files is a list of path objects for the files
+    # At this point, path_src_files is a list of path objects for the files
     # we want to process.... Let's go!
 
-    # Go through the source files. For each non "*.xmp" (case insensitive) file
-    # encountered, create a dictionary. See below for structure.
-    # If xmp files are encountered, and not ignored, 'pair' them with a file
-    # by updating the file dictionary. If there are xmp files that do not
-    # match a file name, keep track of that so a warning can be issued.
-    # dictsFiles will be a list of dictionaryies [ {}, {}, ... {} ] with
-    # one dictionary per file. Each dictionary will have the following strucrue:
-    # {
-    #   name: full path name of image file
-    #   embedded_xmp: True/False, True if xmp data is found, default false.
-    #   xmp_file: full path to xmp file, Default None, and None if no xmp file found.
-    #   star_rating: Default to None.
-    #   color_rating: Default to None
-    # }
-    dictsFiles = []
+    # Get a list of xmp and non-xmp files. If xmp is ignored (-ix/--ignore_xmp),
+    # the xmp list object will get created, but will remain empty. This was done
+    # so later checks for an empty list are less error prone that if the list
+    # didn't exist.
+    file_names = [] # list of full path non-xmp file names
+    file_names_xmp =[] # list of full path file names with xmp extensions.
+    files_xmp_data = [] # list of full path file names with xmp data
+    files_no_xmp_data = [] # list of full path file names with xmp data
+    files_rated = [] # list of full path file names that are rated
 
     for file in path_src_files:
-        if file.suffix.lower() == "xmp":
-            pass
+        if not args.ignore_xmp and file.suffix.lower() == ".xmp":
+            file_names_xmp.append(file.as_posix())
+        elif file.suffix.lower() != ".xmp":
+            file_names.append(file.as_posix())
+
+    for file in file_names:
+        dict_xmp = file_to_dict(file)
+        if dict_xmp:
+            try:
+                files_xmp_data.append(file)
+                prop = dict_xmp[xmp_consts.XMP_NS_XMP]
+                print(f"Xmp namespace data found embedded in file {file}")
+                print("prop:")
+                pprint.pprint(prop)
+                if "xmp:Rating" in prop:
+                    files_rated.append(file)
+            except KeyError as ke:
+                print(f"No xmp namespace data found embedded in file {file}")
+        else:
+                print(f"No xmp data found embedded in file {file}")
+                files_no_xmp_data.append(file)
+    print("\nThere was XMP data was found in these files:")
+    pprint.pprint(files_xmp_data)
+    print("\nThere was NO XMP data found in these files:")
+    pprint.pprint(files_no_xmp_data)
+    print("\nThere was rating data found in these files:")
+    pprint.pprint(files_rated)
 
 
-
-    # for file in path_src_files:
-    #     dict_xmp = file_to_dict(file.as_posix())
-    #     pp.pprint(dict_xmp)
-    #     sys.exit(2)
 
 # Tell python to run main if this program is executed directly (i.e. not imported)
 if __name__ == "__main__":
