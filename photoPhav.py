@@ -111,8 +111,11 @@ def main():
     The -fp, --file_priority option will give priority to information embedded
     in the image file. Without this option, priority is given to a xmp
     'sidecar' file if one exists, and the embedded xmp data would only be used
-    if the xmp sidecar file does not exist, or if the xmp file does exist, but
-    contains no star rating or color rating information.
+    if the xmp sidecar file does not exist or can't be read or for some reason
+    isn't usable. Mutually exclusive with -if/--ignore_file option.
+
+    The -if, --ignore_file option will ignore xmp data embedded in the image
+    file, even if it exists. Mutually exclulsive with -fp/--file_priority option.
 
     The -ix, --ignore_xmp option will ignore xmp sidecar file(s), even if they
     are present.
@@ -210,15 +213,23 @@ destination path.",
         help="Search for image files recursively, starting at the source directory.",
     )
     # xmp options
-    parser.add_argument(
+    fx_pattern = parser.add_mutually_exclusive_group(required=False)
+    fx_pattern.add_argument(
         "-fp",
         "--file_priority",
         action="store_true",
         help="Give priority to information embedded in the image file. Without \
 this option, priority is given to a xmp 'sidecar' file if one exists, and the \
-embedded xmp data would only be used if the xmp sidecar file does not exist, or \
-if the xmp file does exist, but contains no star rating or color rating \
-information.",
+embedded xmp data would only be used if the xmp sidecar file does not exist or \
+can't be read or for some reason isn't usable. Mutually exclusive with \
+-if/--ignore_file option."
+    )
+    fx_pattern.add_argument(
+        "-if",
+        "--ignore_file",
+        action="store_true",
+        help="Ignore xmp data embedded in the image file, even if it exists. \
+Mutually exclulsive with -fp/--file_priority option."
     )
     parser.add_argument(
         "-ix",
@@ -438,6 +449,21 @@ are not yet supported."
                     files_rated.append(file)
             except KeyError as ke:
                 print(f"No xmp namespace data found embedded in file {file}")
+        else:
+                print(f"No xmp data found embedded in file {file}")
+                files_no_xmp_data.append(file)
+
+    for file in file_names_xmp:
+        dict_xmp = file_to_dict(file)
+        if dict_xmp:
+            try:
+                files_xmp_data.append(file)
+                props = dict_xmp[xmp_consts.XMP_NS_XMP]
+                print(f"Xmp namespace data found embedded in file {file}")
+                print("props:")
+                pprint.pprint(props)
+            except KeyError as ke:
+                print(f"Xmp key error in file {file}")
         else:
                 print(f"No xmp data found embedded in file {file}")
                 files_no_xmp_data.append(file)
