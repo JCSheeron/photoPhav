@@ -81,62 +81,62 @@ def main():
     directory. If the color rating is above a value (TODO: What Value), then create
     a link to the file in the destination directory.
 
-    The star rating threshold can be specified with the -sr, --star_rating <rating>
+    The star rating threshold can be specified with the -s/--star_rating <rating>
     option, where rating is 1-5. Values at or above the indicated value will be
     included. Default: 1
 
-    The star rating will be ignored if the -is, --ignore_star option is given.
+    The star rating will be ignored if the -S/--ignore_star option is given.
 
-    The color rating threshold can be specified with the -cr, --color_rating <rating>
-    option where rating is ???. Values at or above the indicated value will be
+    The color label threshold can be specified with the -l/--color_label <rating>
+    option where label is 1-10 ???. Values at or above the indicated value will be
     included. **Default value??** NOTE: Not yet supported.
 
-    The color rating will be ignored if the -ic, --ignore_color option is given.
+    The color label will be ignored if the -L/--ignore_color option is given.
     Default: true (ignore color rating by default)
 
-    A source directory can be provided with the -sd, --source_dir <path> option
+    A source directory can be provided with the -i/--source_dir <path> option
     to specify the directory to use for the source images. If this option is
     not provided, the working directory will used as the source directory.
 
-    A destination directory can be provided with the -dd, --dest_dir <path> option
+    A destination directory can be provided with the -d/--dest_dir <path> option
     to specify the directory to use for the link destination. If this option
     is not provided, a 'favorites' sub directory in the working directory
     will first be created if it does not exist, and will used for the
     destination path.
 
-    The -r, -R, --recursive option searches the source directory recursively. If
+    The -r/-R/--recursive option searches the source directory recursively. If
     images are found in sub folders, the same directory structure will be used
     for the destination directory structure.
 
-    The -fp, --file_priority option will give priority to information embedded
+    The -f/--file_priority option will give priority to information embedded
     in the image file. Without this option, priority is given to a xmp
     'sidecar' file if one exists, and the embedded xmp data would only be used
     if the xmp sidecar file does not exist or can't be read or for some reason
-    isn't usable. Mutually exclusive with -if/--ignore_file option.
+    isn't usable. Mutually exclusive with -F/--ignore_file option.
 
-    The -if, --ignore_file option will ignore xmp data embedded in the image
-    file, even if it exists. Mutually exclulsive with -fp/--file_priority option.
+    The -F/--ignore_file option will ignore xmp data embedded in the image
+    file, even if it exists. Mutually exclulsive with -f/--file_priority option.
 
-    The -ix, --ignore_xmp option will ignore xmp sidecar file(s), even if they
+    The -X/--ignore_xmp option will ignore xmp sidecar file(s), even if they
     are present.
 
-    The -g, --globp <pattern> option allows files to be searched using a glob
+    The -g/--globp <pattern> option allows files to be searched using a glob
     pattern. Mutually exclusive with the -e/--regexp option.
 
-    The -e, --regexp <pattern> option allows files to be searched using a
+    The -e/--regexp <pattern> option allows files to be searched using a
     regular expression. Mutually exclusive with the -g/--globp option.
 
-    The -i, --ignore_case option ignores file name case when matching using a glob
+    The -I/--ignore_case option ignores file name case when matching using a glob
     pattern or regex pattern. This option is ignored if neither the -g or -e,
     patterns are specified.
 
-    The -v, --verbose option increases output messaging. Mutually exclusive
+    The -v/--verbose option increases output messaging. Mutually exclusive
     with -q and -w.
 
-    The -q, --quiet option eliminates output messaging, even in the event of
+    The -q/--quiet option eliminates output messaging, even in the event of
     errors. Mutually exclusive with -v and -w.
 
-    The -w, --show_ew show errors and warning option.
+    The -w/--show_ew show errors and warning option.
     Mutually exclusive with -v and -q.
     """
     # Description string will show up in help.
@@ -154,7 +154,7 @@ def main():
     # define the arguments
     # star rating
     parser.add_argument(
-        "-sr",
+        "-s",
         "--star_rating",
         default=1,
         type=int,
@@ -164,29 +164,29 @@ def main():
 and a link will be created. Default value is 1, so any stared image is a favorite.",
     )
     parser.add_argument(
-        "-is", "--ignore_star", action="store_true", help="Ignore star ratings if set."
+        "-S", "--ignore_star", action="store_true", help="Ignore star ratings if set."
     )
-    # color rating
+    # color label
     parser.add_argument(
-        "-cr",
-        "--color_rating",
+        "-l",
+        "--color_label",
         default=1,
         type=int,
         choices=range(1, 11),  # 1-10
-        metavar="rating",
-        help="Color rating. Values equal are considered Favorites \
+        metavar="label",
+        help="Color label. Values equal are considered Favorites \
 and a link will be created.",
     )
     parser.add_argument(
-        "-ic",
+        "-L",
         "--ignore_color",
         action="store_true",
-        help="NOTE: Not yet supported -- color ratings are always ignored. \
-Ignore color ratings if set (default).",
+        help="NOTE: Not yet supported -- color lables are always ignored. \
+Ignore color labels if set (default).",
     )
     # source dir
     parser.add_argument(
-        "-sd",
+        "-i",
         "--source_dir",
         default=".",
         metavar="path",
@@ -195,7 +195,7 @@ the option or specify '.' to use the working directory.",
     )
     # destination dir
     parser.add_argument(
-        "-dd",
+        "-d",
         "--destination_dir",
         default="favorites",
         metavar="path",
@@ -215,7 +215,7 @@ destination path.",
     # xmp options
     fx_pattern = parser.add_mutually_exclusive_group(required=False)
     fx_pattern.add_argument(
-        "-fp",
+        "-f",
         "--file_priority",
         action="store_true",
         help="Give priority to information embedded in the image file. Without \
@@ -225,14 +225,14 @@ can't be read or for some reason isn't usable. Mutually exclusive with \
 -if/--ignore_file option."
     )
     fx_pattern.add_argument(
-        "-if",
+        "-F",
         "--ignore_file",
         action="store_true",
         help="Ignore xmp data embedded in the image file, even if it exists. \
 Mutually exclulsive with -fp/--file_priority option."
     )
     parser.add_argument(
-        "-ix",
+        "-X",
         "--ignore_xmp",
         action="store_true",
         help="Ignore xmp files even if they are present.",
@@ -253,7 +253,7 @@ Mutually exclulsive with -fp/--file_priority option."
     )
     # ignore case if file name otherwise matches the glob or regex pattern
     parser.add_argument(
-        "-i",
+        "-I",
         "--ignore_case",
         action="store_true",
         help="Ignore case if file name otherwise matches the glob or regex pattern. \
@@ -274,6 +274,7 @@ Ignored if neither -g/--globp or -e/--regexp options are specified.",
     )
     # show only errors and warnings
     og_output.add_argument(
+        "-w",
         "--show_ew",
         action="store_true",
         help="Show only errors and warnings.",
@@ -283,25 +284,43 @@ Ignored if neither -g/--globp or -e/--regexp options are specified.",
 
     # At this point, the arguments will be:
     # Argument              Type        Default
+    # Path/file related:
+    # args.source_dir       string      .
+    # args.destination_dir  string      favorites
+    # args.recursive        bool        False
+    # args.ignore_case      bool        False   case sensitive by default
+    # args.globp            string      None    (globp | regexp)
+    # args.regexp           string      None
+    # Rating related:
     # args.star_rating      int         1
     # args.ignore_star      bool        False   use star ratings >= 1 by default
     # args.color_rating     int         1
     # args.ignore_color     bool        False   Forced True for now to ignore color rating
-    # args.source_dir       string      .
-    # args.destination_dir  string      favorites
-    # args.recursive        bool        False
-    # args.fileTypes        string      None    single value, or comma or space or semicolon delimited
     # args.file_priority    bool        False
+    # args.ignore_file      bool        False
     # args.ignore_xmp       bool        False
-    # args.globp            string      None    (globp | regexp)
-    # args.regexp           string      None
-    # args.ignore_case      bool        False   case sensitive by default
+    # Output related:
     # args.verbose          bool        False   Increase messaging (v | q | w)
     # args.quiet            bool        False   No messaging, not even for errors
     # args.show_ew          bool        False   Show errors and warnings only
 
     # Force ignore_color to be true for now
     args.ignore_color = True
+
+    # check for --ignore_file and --ignore_xmp. If both options are present
+    # there is no action. Warn (if not quiet) and quit. These are not treated
+    # as mutually exclusive, becuase --file_priority and --ignore_file are already
+    # in a mutually exclusive group, so I don't think --ignore_file and
+    # --ignore_xmp can be in a different mutually exclusive group. Furthermore
+    # note that --file_priority and --ignore_xmp is valid, so --ignore_xmp can't
+    # be added to the exiting file mutually exclusive group.
+    # Check for the case manually.
+    if args.ignore_file and args.ignore_xmp:
+        if not args.quiet:
+            print("\nWARNING: --ignore_file and --ignore_xmp options are both \
+selected. This will result in no action as there is no data to act on, and is \
+probably not what was intended.")
+        sys.exit(2)
 
     # make a pretty printer
     pp = pprint.PrettyPrinter(width=41, compact=True)
