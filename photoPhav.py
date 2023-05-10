@@ -81,24 +81,27 @@ def main():
     directory. If the color rating is above a value (TODO: What Value), then create
     a link to the file in the destination directory.
 
-    The star rating threshold can be specified with the -s/--star_rating <rating>
+    The star rating threshold can be specified with the -S/--star_rating <rating>
     option, where rating is 1-5. Values at or above the indicated value will be
-    included. Default: 1
+    included. Default: 1. Mutually exclusive with the -s/--ignore_star option.
 
-    The star rating will be ignored if the -S/--ignore_star option is given.
+    The star rating will be ignored if the -s/--ignore_star option is given.
+    Mutually exclusive with the -S/--star_rating option.
 
-    The color label threshold can be specified with the -l/--color_label <rating>
+    The color label threshold can be specified with the -C/--color_label <rating>
     option where label is 1-10 ???. Values at or above the indicated value will be
-    included. **Default value??** NOTE: Not yet supported.
+    included. Mutually exclusive with the -c/--ignore_color option.
+    **Default value??** NOTE: Not yet supported.
 
-    The color label will be ignored if the -L/--ignore_color option is given.
-    Default: true (ignore color rating by default)
+    The color label will be ignored if the -c/--ignore_color option is given.
+    Default: true (ignore color rating by default). Mutually exclusive with the
+    -C/--color_label option.
 
-    A source directory can be provided with the -i/--source_dir <path> option
+    A source directory can be provided with the -I/--source_dir <path> option
     to specify the directory to use for the source images. If this option is
     not provided, the working directory will used as the source directory.
 
-    A destination directory can be provided with the -d/--dest_dir <path> option
+    A destination directory can be provided with the -d/-D/--dest_dir <path> option
     to specify the directory to use for the link destination. If this option
     is not provided, a 'favorites' sub directory in the working directory
     will first be created if it does not exist, and will used for the
@@ -108,16 +111,16 @@ def main():
     images are found in sub folders, the same directory structure will be used
     for the destination directory structure.
 
-    The -f/--file_priority option will give priority to information embedded
+    The -F/--file_priority option will give priority to information embedded
     in the image file. Without this option, priority is given to a xmp
     'sidecar' file if one exists, and the embedded xmp data would only be used
     if the xmp sidecar file does not exist or can't be read or for some reason
-    isn't usable. Mutually exclusive with -F/--ignore_file option.
+    isn't usable. Mutually exclusive with -f/--ignore_file option.
 
-    The -F/--ignore_file option will ignore xmp data embedded in the image
-    file, even if it exists. Mutually exclulsive with -f/--file_priority option.
+    The -f/--ignore_file option will ignore xmp data embedded in the image
+    file, even if it exists. Mutually exclulsive with -F/--file_priority option.
 
-    The -X/--ignore_xmp option will ignore xmp sidecar file(s), even if they
+    The -x/--ignore_xmp option will ignore xmp sidecar file(s), even if they
     are present.
 
     The -g/--globp <pattern> option allows files to be searched using a glob
@@ -126,7 +129,7 @@ def main():
     The -e/--regexp <pattern> option allows files to be searched using a
     regular expression. Mutually exclusive with the -g/--globp option.
 
-    The -I/--ignore_case option ignores file name case when matching using a glob
+    The -i/--ignore_case option ignores file name case when matching using a glob
     pattern or regex pattern. This option is ignored if neither the -g or -e,
     patterns are specified.
 
@@ -153,40 +156,45 @@ def main():
     )
     # define the arguments
     # star rating
-    parser.add_argument(
-        "-s",
+    sr_group = parser.add_mutually_exclusive_group(required=False)
+    sr_group.add_argument(
+        "-S",
         "--star_rating",
         default=1,
         type=int,
         choices=range(1, 6),  # 1-5
         metavar="rating",
         help="Star rating. Values equal or greater are considered Favorites \
-and a link will be created. Default value is 1, so any stared image is a favorite.",
+and a link will be created. Default value is 1, so any stared image is a favorite. \
+Mutually exclusive with the -s/--ignore_star rating.",
     )
-    parser.add_argument(
-        "-S", "--ignore_star", action="store_true", help="Ignore star ratings if set."
+    sr_group.add_argument(
+        "-s", "--ignore_star", action="store_true", help="Ignore star ratings \
+if set. Mutually exclusive with the -S/--star_rating option."
     )
     # color label
-    parser.add_argument(
-        "-l",
+    cl_group = parser.add_mutually_exclusive_group(required=False)
+    cl_group.add_argument(
+        "-C",
         "--color_label",
         default=1,
         type=int,
         choices=range(1, 11),  # 1-10
         metavar="label",
         help="Color label. Values equal are considered Favorites \
-and a link will be created.",
+and a link will be created. Mutually exclusive with the -c/--ignore_color option."
     )
-    parser.add_argument(
-        "-L",
+    cl_group.add_argument(
+        "-c",
         "--ignore_color",
         action="store_true",
-        help="NOTE: Not yet supported -- color lables are always ignored. \
-Ignore color labels if set (default).",
+        help="Color label will be ignored if this option is given. Mutually \
+exclusive with the -C/-color_label option. NOTE: Not yet supported -- color \
+lables are always ignored."
     )
     # source dir
     parser.add_argument(
-        "-i",
+        "-I",
         "--source_dir",
         default=".",
         metavar="path",
@@ -196,6 +204,7 @@ the option or specify '.' to use the working directory.",
     # destination dir
     parser.add_argument(
         "-d",
+        "-D",
         "--destination_dir",
         default="favorites",
         metavar="path",
@@ -215,24 +224,24 @@ destination path.",
     # xmp options
     fx_pattern = parser.add_mutually_exclusive_group(required=False)
     fx_pattern.add_argument(
-        "-f",
+        "-F",
         "--file_priority",
         action="store_true",
         help="Give priority to information embedded in the image file. Without \
 this option, priority is given to a xmp 'sidecar' file if one exists, and the \
 embedded xmp data would only be used if the xmp sidecar file does not exist or \
 can't be read or for some reason isn't usable. Mutually exclusive with \
--if/--ignore_file option."
+-f/--ignore_file option."
     )
     fx_pattern.add_argument(
-        "-F",
+        "-f",
         "--ignore_file",
         action="store_true",
         help="Ignore xmp data embedded in the image file, even if it exists. \
-Mutually exclulsive with -fp/--file_priority option."
+Mutually exclulsive with -F/--file_priority option."
     )
     parser.add_argument(
-        "-X",
+        "-x",
         "--ignore_xmp",
         action="store_true",
         help="Ignore xmp files even if they are present.",
@@ -253,7 +262,7 @@ Mutually exclulsive with -fp/--file_priority option."
     )
     # ignore case if file name otherwise matches the glob or regex pattern
     parser.add_argument(
-        "-I",
+        "-i",
         "--ignore_case",
         action="store_true",
         help="Ignore case if file name otherwise matches the glob or regex pattern. \
