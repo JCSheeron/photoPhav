@@ -326,7 +326,7 @@ Ignored if neither -g/--globp or -e/--regexp options are specified.",
     # Check for the case manually.
     if args.ignore_file and args.ignore_xmp:
         if not args.quiet:
-            print("\nWARNING: --ignore_file and --ignore_xmp options are both \
+            print("\nWARNING: -f/--ignore_file and -x/--ignore_xmp options are both \
 selected. This will result in no action as there is no data to act on, and is \
 probably not what was intended.")
         sys.exit(2)
@@ -376,8 +376,9 @@ are not yet supported."
     else:
         contents = path_src.glob("*")
 
-    # Get the files only -- exclude the directories
-    path_all_files = [file for file in contents if file.is_file()]
+    # Get the files only -- exclude the directories. Use a set since values are
+    # unique and should not change
+    path_all_files = {file for file in contents if file.is_file()}
     # if verbose and filtering options are opted, then display the files found
     # before filtering
     if args.verbose and args.globp:
@@ -393,13 +394,13 @@ are not yet supported."
         )
         listPrettyPrint1Col([file.as_posix() for file in path_all_files])
 
-    path_src_files = []  # This will hold the filtered (final) list of path objects
+    path_src_files = set()  # This will hold the filtered (final) list of path objects
     # filter out files based on regex filter
     for path in path_all_files:
         fp = path.as_posix() # get full path name
         try:
             if re.match(re_pattern, fp):
-                path_src_files.append(path)
+                path_src_files.add(path)
         except re.error as err:
             if not args.quiet:
                 print("ERROR: Regular Expression Error. Bad escape?")
@@ -434,17 +435,29 @@ are not yet supported."
 
     # Get a list of xmp and non-xmp files. If xmp is ignored (-ix/--ignore_xmp),
     # the xmp list object will get created, but will remain empty. This was done
-    # so later checks for an empty list are less error prone that if the list
-    # didn't exist.
-    file_names = [] # list of full path non-xmp file names
-    file_names_xmp =[] # list of full path file names with xmp extensions.
-    files_xmp_data = [] # list of full path file names with xmp data
-    files_no_xmp_data = [] # list of full path file names with xmp data
-    files_rated = [] # list of full path file names that are rated
+    # so later checks for an empty list cover the no file case and the ignore
+    # case, and are less error prone that if the list didn't exist.
+    file_names = set() # list of full path non-xmp file names
+    file_names_xmp =set() # list of full path file names with xmp suffix
+    # files_xmp_data = set() # list of full path file names with xmp data
+    # files_no_xmp_data = [] # list of full path file names with xmp data
+    # files_rated = [] # list of full path file names that are rated
+    for file in path_src_files:
+        if not args.ignore_xmp and file.suffix.lower() == ".xmp":
+            file_names_xmp.add(file.as_posix())
+        elif file.suffix.lower() != ".xmp":
+            file_names.add(file.as_posix())
 
+    # At this point, file_names[] will have all the non-xmp files, and
+    # file_names_xmp[] will have the *.xmp file name,
+    # or will be empty if there are no xmp files or will also be empty if xmp
+    # is ignored (-x/--ignore_xmp)
+
+    # Create a helper function to retreive the rating from an xmp property and
+    # return it as a function.
     def get_embedded_rating(props):
         """Given properties (props) as a list of tuples, extract the Rating
-        as an integer. Return 0 if not found."""
+        as an integer. Return 0 if not found or if can't be converted to an int."""
         r_tuple = tuple(filter(lambda iterable: "xmp:Rating" in iterable, props))
         # If no rating is found, return 0
         # If a rating entry is found, then it is in a tuple with the format:
@@ -459,11 +472,83 @@ are not yet supported."
        # if we get here, the tuple was empty, and there is no rating
         return 0
 
-    for file in path_src_files:
-        if not args.ignore_xmp and file.suffix.lower() == ".xmp":
-            file_names_xmp.append(file.as_posix())
-        elif file.suffix.lower() != ".xmp":
-            file_names.append(file.as_posix())
+    # Create helper function to test if a file has an associated xmp file
+    def has_xmp(fname, xmp_files):
+        """Given a file name and a set of xmp files, see if the file name matches
+        an xmp filename, less the suffixes. e.g. foo.jpg and foo.xmp would be
+        a match."""
+        # strip off the extensions and if there is a match, the set will have a member
+        return len({fn for fn in xmp_files if fn.rsplit('.', 1)[0] == fname.rsplit('.', 1)[0]}) > 0
+
+    # Create helper function to return the file name of the associated xmp file
+    def get_xmp_filename(fname, xmp_files):
+        """Given a file name and a set of xmp files, return the name of the 
+        corresponding xmp file name. Nominally this is the same name as the 
+        file name, except the suffix would be '.xmp' or '.XMP'"""
+        # strip off the extensions and if there is a match, return the full xmp
+        # file name. If there is not match, xname will be the empty set, and
+        # return an empty stiring.
+        xname = {fn for fn in xmp_files if fn.rsplit('.', 1)[0] == fname.rsplit('.', 1)[0]}
+        if not xname:
+            return ""
+        else:
+            return list(xname).pop() # return the only memeber of the set
+
+    # Create helper function to create a link.
+    def create_link(fname):
+        """Given a file name, create a symbolic link in the destination
+        directory."""
+        pass
+
+    for ifn in file_names: # image full path file name
+        # Defallt behavior is xmp priority, so get the rating from xmp if there is one
+        # and if not, check for data embedded in the file. Otherwise check the other
+        # combinations
+        if not args.file_priority and not args.ignore_file and not args.ignore_xmp:
+            if has_xmp(ifn, file_names_xmp):
+                # There is an xmp file for this image file. Use it.
+                ifx = get_xmp_filename(ifn, file_names_xmp)
+                try:
+                    dict_xmp = file_to_dict(ifx)
+                    props = dict_xmp[xmp_consts.XMP_NS_XMP]
+                    rating = get_embedded_rating(props)
+                    if rating > 0:
+                        # TODO: Make link
+                        pass
+                except KeyError as ke:
+                    print(f"No xmp namespace data found embedded in file {file}")
+                print(f"No xmp data found embedded in file {file}")
+                files_no_xmp_data.append(file)
+                pass
+            else:
+                # There is no xmp file for this image file. Use the embedded
+                # data if it exists.
+                dict_xmp = file_to_dict(ifn)
+                if dict_xmp:
+                    # There is embedded xmp data found. Try to get a rating.
+                    pass
+        elif (not args.file_priority and args.ignore_xmp) or args.file_priority:
+            # If file priority or ignore_xmp, then initially check the data
+            # embedded in the file for a rating. If there is no data, then try
+            # the xmp file if it exists and should not be ignored.
+            dict_xmp = file_to_dict(ifn)
+            if dict_xmp:
+                # There is embedded xmp data found. Try to get a rating.
+                pass
+            elif has_xmp(ifn, file_names_xmp):
+                # There was no embedded xmp data found, but there is an xmp file
+                pass
+        elif args.ignore_file:
+            # Ignore the embedded data in the image file, and use the xmp
+            # file if it exists
+            if has_xmp(ifn, file_names_xmp):
+                pass
+        else:
+            # Should not get here. Here for completeness and documentation.
+            # Print a message and leave.
+            print("ERROR: Argument or logic error. Not sure which xmp data \
+to process. Exiting")
+            sys.exit(3)
 
     for file in file_names:
         dict_xmp = file_to_dict(file)
@@ -471,7 +556,10 @@ are not yet supported."
             try:
                 files_xmp_data.append(file)
                 props = dict_xmp[xmp_consts.XMP_NS_XMP]
+                print("***FFF***")
                 print(f"Xmp namespace data found embedded in file {file}")
+                print("props:")
+                pprint.pprint(props)
                 rating = get_embedded_rating(props)
                 if rating > 0:
                     files_rated.append(file)
@@ -487,9 +575,13 @@ are not yet supported."
             try:
                 files_xmp_data.append(file)
                 props = dict_xmp[xmp_consts.XMP_NS_XMP]
+                print("***XXX***")
                 print(f"Xmp namespace data found embedded in file {file}")
                 print("props:")
                 pprint.pprint(props)
+                rating = get_embedded_rating(props)
+                if rating > 0:
+                    files_rated.append(file)
             except KeyError as ke:
                 print(f"Xmp key error in file {file}")
         else:
