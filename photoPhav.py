@@ -356,7 +356,6 @@ are not yet supported."
         print(path_src.resolve())
         print("The destination path is:")
         print(path_dest.resolve())
-        sys_exit(4)
 
     # Search the source directory for files based on recursive, glob, and regex
     # options. Since the case-insensitive globp or regexp options will use regex,
@@ -478,7 +477,7 @@ are not yet supported."
         return 0
 
     # Create helper function to test if a file has an associated xmp file
-    def has_xmp(fname: str, xmp_files: set[str]):
+    def has_xmp(fname: str, xmp_files: set[Path]):
         """Given a file name and a set of xmp files, see if the file name matches
         an xmp filename, less the suffixes. e.g. foo.jpg and foo.xmp would be
         a match."""
@@ -488,14 +487,14 @@ are not yet supported."
                 {
                     fn
                     for fn in xmp_files
-                    if fn.rsplit(".", 1)[0] == fname.rsplit(".", 1)[0]
+                    if fn.as_posix().rsplit(".", 1)[0] == fname.rsplit(".", 1)[0]
                 }
             )
             > 0
         )
 
     # Create helper function to return the file name of the associated xmp file
-    def get_xmp_filename(fname: str, xmp_files: set[str]):
+    def get_xmp_filename(fname: str, xmp_files: set[Path]):
         """Given a file name and a set of xmp files, return the name of the
         corresponding xmp file name. Nominally this is the same name as the
         file name, except the suffix would be '.xmp' or '.XMP'"""
@@ -503,12 +502,15 @@ are not yet supported."
         # file name. If there is not match, xname will be the empty set, and
         # return an empty stiring.
         xname = {
-            fn for fn in xmp_files if fn.rsplit(".", 1)[0] == fname.rsplit(".", 1)[0]
+            fn.as_posix()
+            for fn in xmp_files
+            if fn.as_posix().rsplit(".", 1)[0] == fname.rsplit(".", 1)[0]
         }
         if not xname:
             return ""
-        else:
-            return list(xname).pop()  # return the only memeber of the set
+
+        # if we get here, there is something to return
+        return list(xname).pop()  # return the only memeber of the set
 
     # Create helper function to create a link.
     def create_link(target_path: Path, src_path: Path, dest_path: Path):
@@ -524,9 +526,11 @@ are not yet supported."
         link created would be /e/f/g/c/fav1.jpg."""
         try:
             # Get the part of the target path that is relative to the source path
-            # This will be used to for the destination
-            rel_path = target_path.relative_to(src_path.as_posix())
-            print(f"Tar path rel to source: {rel_path}")
+            # This will be appended to the destination.
+            rel_path = Path(target_path.resolve()).relative_to(src_path.resolve())
+            link_path = dest_path.joinpath(rel_path).resolve()
+            print(f"Rel Path: {rel_path}")
+            print(f"Link Path: {link_path}")
         except Exception:
             pass
 
@@ -545,9 +549,8 @@ are not yet supported."
                         props = dict_xmp[xmp_consts.XMP_NS_XMP]
                         rating = get_embedded_rating(props)
                         if rating > 0:
-                            # TODO: Make link
-                            pass
-                except KeyError as ke:
+                            create_link(path, path_src, path_dest)
+                except Exception:
                     pass
             else:
                 # There is no xmp file for this image file. Use the embedded
@@ -559,9 +562,8 @@ are not yet supported."
                         props = dict_xmp[xmp_consts.XMP_NS_XMP]
                         rating = get_embedded_rating(props)
                         if rating > 0:
-                            # TODO: Make link
-                            pass
-                    except KeyError as ke:
+                            create_link(path, path_src, path_dest)
+                    except Exception:
                         pass
         elif (not args.file_priority and args.ignore_xmp) or args.file_priority:
             # If file priority or ignore_xmp, then initially check the data
@@ -574,9 +576,8 @@ are not yet supported."
                     props = dict_xmp[xmp_consts.XMP_NS_XMP]
                     rating = get_embedded_rating(props)
                     if rating > 0:
-                        # TODO: Make link
-                        pass
-                except KeyError as ke:
+                        create_link(path, path_src, path_dest)
+                except Exception:
                     pass
             elif not args.ignore_xmp and has_xmp(ifn, image_paths_xmp):
                 # There was no embedded xmp data found, but we are not ignoring
@@ -588,9 +589,8 @@ are not yet supported."
                         props = dict_xmp[xmp_consts.XMP_NS_XMP]
                         rating = get_embedded_rating(props)
                         if rating > 0:
-                            # TODO: Make link
-                            pass
-                except KeyError as ke:
+                            create_link(path, path_src, path_dest)
+                except Exception:
                     pass
         elif args.ignore_file:
             # Ignore the embedded data in the image file, and use the xmp
@@ -604,9 +604,8 @@ are not yet supported."
                         props = dict_xmp[xmp_consts.XMP_NS_XMP]
                         rating = get_embedded_rating(props)
                         if rating > 0:
-                            # TODO: Make link
-                            pass
-                except KeyError as ke:
+                            create_link(path, path_src, path_dest)
+                except Exception:
                     pass
         else:
             # Should not get here. Here for completeness and documentation.
