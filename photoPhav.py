@@ -440,26 +440,27 @@ are not yet supported."
     # At this point, path_src_files is a list of path objects for the files
     # we want to process.... Let's go!
 
-    # Get a list of xmp and non-xmp files. If xmp is ignored (-ix/--ignore_xmp),
+    # Get a list of xmp and non-xmp files. Store path objects so full compliment
+    # of info is avail later. If xmp is ignored (-ix/--ignore_xmp),
     # the xmp list object will get created, but will remain empty. This was done
     # so later checks for an empty list cover the no file case and the ignore
     # case, and are less error prone that if the list didn't exist.
-    file_names = set()  # list of full path non-xmp file names
-    file_names_xmp = set()  # list of full path file names with xmp suffix
+    image_paths = set()  # list of full path non-xmp file names
+    image_paths_xmp = set()  # list of full path file names with xmp suffix
     for file in path_src_files:
         if not args.ignore_xmp and file.suffix.lower() == ".xmp":
-            file_names_xmp.add(file.as_posix())
+            image_paths_xmp.add(file)
         elif file.suffix.lower() != ".xmp":
-            file_names.add(file.as_posix())
+            image_paths.add(file)
 
-    # At this point, file_names[] will have all the non-xmp files, and
-    # file_names_xmp[] will have the *.xmp file name,
+    # At this point, image_paths[] will have all the non-xmp files, and
+    # image_paths_xmp[] will have the *.xmp file name,
     # or will be empty if there are no xmp files or will also be empty if xmp
     # is ignored (-x/--ignore_xmp)
 
     # Create a helper function to retreive the rating from an xmp property and
     # return it as a function.
-    def get_embedded_rating(props):
+    def get_embedded_rating(props: list[tuple]):
         """Given properties (props) as a list of tuples, extract the Rating
         as an integer. Return 0 if not found or if can't be converted to an int."""
         r_tuple = tuple(filter(lambda iterable: "xmp:Rating" in iterable, props))
@@ -477,7 +478,7 @@ are not yet supported."
         return 0
 
     # Create helper function to test if a file has an associated xmp file
-    def has_xmp(fname, xmp_files):
+    def has_xmp(fname: str, xmp_files: set[str]):
         """Given a file name and a set of xmp files, see if the file name matches
         an xmp filename, less the suffixes. e.g. foo.jpg and foo.xmp would be
         a match."""
@@ -494,7 +495,7 @@ are not yet supported."
         )
 
     # Create helper function to return the file name of the associated xmp file
-    def get_xmp_filename(fname, xmp_files):
+    def get_xmp_filename(fname: str, xmp_files: set[str]):
         """Given a file name and a set of xmp files, return the name of the
         corresponding xmp file name. Nominally this is the same name as the
         file name, except the suffix would be '.xmp' or '.XMP'"""
@@ -510,18 +511,34 @@ are not yet supported."
             return list(xname).pop()  # return the only memeber of the set
 
     # Create helper function to create a link.
-    def create_link(target_path):
-        """Given a file name, create a symbolic link in the destination
-        directory."""
+    def create_link(target_path: Path, src_path: Path, dest_path: Path):
+        """Given a target path, create a symbolic link in the destination
+        directory. The source directory structure that comes after the source
+        path will be retained, so the source path is needed for reference.
+        For example, if:
+        target_path: /a/b/c/fav1.jpg
+        source_path: /a/b
+        dest_path:   /e/f/g
+        The above would mean the target was in the 'c' sub-directory of the
+        source, and this would be retained on the destination side, so the
+        link created would be /e/f/g/c/fav1.jpg."""
+        try:
+            # Get the part of the target path that is relative to the source path
+            # This will be used to for the destination
+            rel_path = target_path.relative_to(src_path.as_posix())
+            print(f"Tar path rel to source: {rel_path}")
+        except Exception:
+            pass
 
-    for ifn in file_names:  # image full path file name
-        # Defallt behavior is xmp priority, so get the rating from xmp if there is one
+    for path in image_paths:
+        # Default behavior is xmp priority, so get the rating from xmp if there is one
         # and if not, check for data embedded in the file. Otherwise check the other
         # combinations
+        ifn = path.as_posix()  # use the full path file name in this case
         if not args.file_priority and not args.ignore_file and not args.ignore_xmp:
-            if has_xmp(ifn, file_names_xmp):
+            if has_xmp(ifn, image_paths_xmp):
                 # There is an xmp file for this image file. Use it.
-                ifx = get_xmp_filename(ifn, file_names_xmp)
+                ifx = get_xmp_filename(ifn, image_paths_xmp)
                 try:
                     dict_xmp = file_to_dict(ifx)
                     if dict_xmp:
@@ -561,10 +578,10 @@ are not yet supported."
                         pass
                 except KeyError as ke:
                     pass
-            elif not args.ignore_xmp and has_xmp(ifn, file_names_xmp):
+            elif not args.ignore_xmp and has_xmp(ifn, image_paths_xmp):
                 # There was no embedded xmp data found, but we are not ignoring
                 # xmp, and there is an xmp file for this image file. Use it.
-                ifx = get_xmp_filename(ifn, file_names_xmp)
+                ifx = get_xmp_filename(ifn, image_paths_xmp)
                 try:
                     dict_xmp = file_to_dict(ifx)
                     if dict_xmp:
@@ -578,9 +595,9 @@ are not yet supported."
         elif args.ignore_file:
             # Ignore the embedded data in the image file, and use the xmp
             # file if it exists
-            if has_xmp(ifn, file_names_xmp):
+            if has_xmp(ifn, image_paths_xmp):
                 # There is an xmp file for this image file. Use it.
-                ifx = get_xmp_filename(ifn, file_names_xmp)
+                ifx = get_xmp_filename(ifn, image_paths_xmp)
                 try:
                     dict_xmp = file_to_dict(ifx)
                     if dict_xmp:
