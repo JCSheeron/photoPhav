@@ -44,6 +44,7 @@ and/or color ratings. See main.docstring for additional information.
 # imports
 
 # Standard library and system imports
+import traceback
 from os import symlink as os_symlink
 from sys import exit as sys_exit
 
@@ -525,14 +526,23 @@ are not yet supported."
         source, and this would be retained on the destination side, so the
         link created would be /e/f/g/c/fav1.jpg."""
         try:
-            # Get the part of the target path that is relative to the source path
-            # This will be appended to the destination.
-            rel_path = Path(target_path.resolve()).relative_to(src_path.resolve())
+            # Get the part of the target path that is relative to the source
+            # path. Append this to the destination to make the link path, and
+            # create the link
+            rel_path = target_path.resolve().relative_to(src_path.resolve())
             link_path = dest_path.joinpath(rel_path).resolve()
-            print(f"Rel Path: {rel_path}")
-            print(f"Link Path: {link_path}")
+            print("\ncreate_link() called")
+            print(f"Src Path: {src_path.resolve()}")
+            print(f"Dest Path: {dest_path.resolve()}")
+            print(f"Rel Path: {rel_path.resolve()}")
+            print(f"Link Path: {link_path.resolve()}")
+            # TODO:
+            # * Get the parent of link_path
+            #   * create it if it does not exist
+            # os_symlink(target_path.resolve(), link_path.resolve())
         except Exception:
-            pass
+            print("***ERROR: Exeption in create_link()")
+            traceback.print_exc()
 
     for path in image_paths:
         # Default behavior is xmp priority, so get the rating from xmp if there is one
