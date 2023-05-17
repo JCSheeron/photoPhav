@@ -514,7 +514,7 @@ are not yet supported."
         return list(xname).pop()  # return the only memeber of the set
 
     # Create helper function to copy group, owner, and permissions of a dir
-    def cp_gop(src_path: Path, dest_path: Path):
+    def cp_ogp(src_path: Path, dest_path: Path):
         """Copy the owner, group, and permissions from a source path."""
         dest_str = dest_path.resolve().as_posix()
         src_stat = os.stat(src_path.resolve().as_posix())
@@ -553,7 +553,10 @@ are not yet supported."
             # first see if the destination folder exists. If it does not,
             # create it, and copy the owner, group, and privliges of the src path
             if not dest_path.is_dir():
-                print("** Dest Dir does not exit!! **")
+                dpath = dest_path.resolve()
+                print(f"Dest Dir does not exit. Creating {dpath}")
+                dpath.mkdir()
+                cp_ogp(path_src, dpath)
 
             # Get parent of the target link. Preserve it becuase it may be used
             # several times. See if it exists. If it does not exist,
