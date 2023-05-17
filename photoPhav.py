@@ -45,7 +45,7 @@ and/or color ratings. See main.docstring for additional information.
 
 # Standard library and system imports
 import traceback
-from os import symlink as os_symlink
+import os
 from sys import exit as sys_exit
 
 # arg parser
@@ -513,8 +513,16 @@ are not yet supported."
         # if we get here, there is something to return
         return list(xname).pop()  # return the only memeber of the set
 
+    # Create helper function to copy group, owner, and permissions of a dir
+    def cp_gop(src_path: Path, dest_path: Path):
+        """Copy the owner, group, and permissions from a source path."""
+        dest_str = dest_path.resolve().as_posix()
+        src_stat = os.stat(src_path.resolve().as_posix())
+        os.chown(dest_str, src_stat.st_uid, src_stat.st_gid)
+        os.chmod(dest_str, src_stat.st_mode)
+
     # Create helper function to create a link.
-    def create_link(target_path: Path, src_path: Path, dest_path: Path):
+    def create_link(target_path: Path, dest_path: Path, src_path: Path):
         """Given a target path, create a symbolic link in the destination
         directory. The source directory structure that comes after the source
         path will be retained, so the source path is needed for reference.
@@ -532,14 +540,36 @@ are not yet supported."
             rel_path = target_path.resolve().relative_to(src_path.resolve())
             link_path = dest_path.joinpath(rel_path).resolve()
             print("\ncreate_link() called")
+            print(f"Target Path: {target_path.resolve()}")
             print(f"Src Path: {src_path.resolve()}")
+            print(f"Src Path Short: {src_path}")
             print(f"Dest Path: {dest_path.resolve()}")
-            print(f"Rel Path: {rel_path.resolve()}")
+            print(f"Dest Path Short: {dest_path}")
+            print(f"Rel Path: {rel_path}")
             print(f"Link Path: {link_path.resolve()}")
+            print(f"Parent Path: {rel_path.parent}")
+
+            # Follow on operations will depend on the destination directory, so
+            # first see if the destination folder exists. If it does not,
+            # create it, and copy the owner, group, and privliges of the src path
+            if not dest_path.is_dir():
+                print("** Dest Dir does not exit!! **")
+
+            # Get parent of the target link. Preserve it becuase it may be used
+            # several times. See if it exists. If it does not exist,
+            # make it, along with any necessary parent directories. For any
+            # dirctories made, copy the owner, group, and permissions from the
+            # target directories.
+            target_parent = link_path.parent
+            if not target_parent.is_dir():
+                # the link target dir does not exist.
+                pass
+
             # TODO:
             # * Get the parent of link_path
             #   * create it if it does not exist
             # os_symlink(target_path.resolve(), link_path.resolve())
+
         except Exception:
             print("***ERROR: Exeption in create_link()")
             traceback.print_exc()
