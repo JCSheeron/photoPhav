@@ -539,39 +539,47 @@ are not yet supported."
             # create the link
             rel_path = target_path.resolve().relative_to(src_path.resolve())
             link_path = dest_path.joinpath(rel_path).resolve()
-            print("\ncreate_link() called")
-            print(f"Target Path: {target_path.resolve()}")
-            print(f"Src Path: {src_path.resolve()}")
-            print(f"Src Path Short: {src_path}")
-            print(f"Dest Path: {dest_path.resolve()}")
-            print(f"Dest Path Short: {dest_path}")
-            print(f"Rel Path: {rel_path}")
-            print(f"Link Path: {link_path.resolve()}")
-            print(f"Parent Path: {rel_path.parent}")
+            # print("\ncreate_link() called")
+            # print(f"Target Path: {target_path.resolve()}")
+            # print(f"Src Path: {src_path.resolve()}")
+            # print(f"Src Path Short: {src_path}")
+            # print(f"Dest Path: {dest_path.resolve()}")
+            # print(f"Dest Path Short: {dest_path}")
+            # print(f"Rel Path: {rel_path}")
+            # print(f"Link Path: {link_path.resolve()}")
+            # print(f"Link Path Short: {link_path}")
+            # print(f"Parent Path: {rel_path.parent}")
 
-            # Follow on operations will depend on the destination directory, so
-            # first see if the destination folder exists. If it does not,
-            # create it, and copy the owner, group, and privliges of the src path
-            if not dest_path.is_dir():
-                dpath = dest_path.resolve()
-                print(f"Dest Dir does not exit. Creating {dpath}")
-                dpath.mkdir()
-                cp_ogp(path_src, dpath)
-
-            # Get parent of the target link. Preserve it becuase it may be used
-            # several times. See if it exists. If it does not exist,
+            # See if the parent of the target link exists. If it does not exist,
             # make it, along with any necessary parent directories. For any
             # dirctories made, copy the owner, group, and permissions from the
             # target directories.
-            target_parent = link_path.parent
-            if not target_parent.is_dir():
-                # the link target dir does not exist.
-                pass
+            if not link_path.parent.is_dir():
+                # The link target dir (parent of the symbolic link we want to
+                # make) does not exist. rel_path gives us the difference between
+                # to 'root' of the destination and the link path. Walk the
+                # rel_path and create any needed subdirectories. These are made
+                # individually so the owner, group, and permissions of each can
+                # be made to match the corresponding sub-directory in the source
+                # directory structure. The path.parents property includes the
+                # '.' case so this loop will also make the root destination
+                # directory if it does not exist.
+                if args.verbose:
+                    print("Link destination directory does not exist.")
+                    print("Creating the necessary link destination directories.")
+                # Go thru the directories in order of shallowest to deepest.
+                # If a directory does not exist, create it. Some sub-directories
+                # may already exist.
+                for p in reversed(rel_path.parents):
+                    dpath = dest_path.joinpath(p).resolve()
+                    if not dpath.is_dir():
+                        if args.verbose:
+                            print(f"Directory {dpath} does not exit. Creating it.")
+                        dpath.mkdir()
+                        cp_ogp(path_src, dpath)
 
-            # TODO:
-            # * Get the parent of link_path
-            #   * create it if it does not exist
-            # os_symlink(target_path.resolve(), link_path.resolve())
+            # Make the link
+            os.symlink(target_path.resolve(), link_path.resolve())
 
         except Exception:
             print("***ERROR: Exeption in create_link()")
@@ -592,7 +600,7 @@ are not yet supported."
                         props = dict_xmp[xmp_consts.XMP_NS_XMP]
                         rating = get_embedded_rating(props)
                         if rating > 0:
-                            create_link(path, path_src, path_dest)
+                            create_link(path, path_dest, path_src)
                 except Exception:
                     pass
             else:
@@ -605,7 +613,7 @@ are not yet supported."
                         props = dict_xmp[xmp_consts.XMP_NS_XMP]
                         rating = get_embedded_rating(props)
                         if rating > 0:
-                            create_link(path, path_src, path_dest)
+                            create_link(path, path_dest, path_src)
                     except Exception:
                         pass
         elif (not args.file_priority and args.ignore_xmp) or args.file_priority:
@@ -619,7 +627,7 @@ are not yet supported."
                     props = dict_xmp[xmp_consts.XMP_NS_XMP]
                     rating = get_embedded_rating(props)
                     if rating > 0:
-                        create_link(path, path_src, path_dest)
+                        create_link(path, path_dest, path_src)
                 except Exception:
                     pass
             elif not args.ignore_xmp and has_xmp(ifn, image_paths_xmp):
@@ -632,7 +640,7 @@ are not yet supported."
                         props = dict_xmp[xmp_consts.XMP_NS_XMP]
                         rating = get_embedded_rating(props)
                         if rating > 0:
-                            create_link(path, path_src, path_dest)
+                            create_link(path, path_dest, path_src)
                 except Exception:
                     pass
         elif args.ignore_file:
@@ -647,7 +655,7 @@ are not yet supported."
                         props = dict_xmp[xmp_consts.XMP_NS_XMP]
                         rating = get_embedded_rating(props)
                         if rating > 0:
-                            create_link(path, path_src, path_dest)
+                            create_link(path, path_dest, path_src)
                 except Exception:
                     pass
         else:

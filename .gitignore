@@ -18,3 +18,5 @@ pip-selfcheck.json
 # compiled python cache
 __pycache__/
 
+# ignore the favorites dir
+favorites/
