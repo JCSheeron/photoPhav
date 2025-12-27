@@ -318,7 +318,7 @@ Ignored if neither -g/--globp or -e/--regexp options are specified.",
     # args.quiet            bool        False   No messaging, not even for errors
     # args.show_ew          bool        False   Show errors and warnings only
 
-    # Force ignore_color to be true for now
+    # Force ignore_color to be true for now. Color ratings are not yet supported.
     args.ignore_color = True
 
     # check for --ignore_file and --ignore_xmp. If both options are present
